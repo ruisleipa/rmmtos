@@ -1,0 +1,9 @@
+STACK_BOTTOM: EQU 0x0000
+
+MACRO STACK_SET
+	mov ax,#0x0050
+	mov ss,ax
+	mov sp,#STACK_BOTTOM
+	mov bp,#STACK_BOTTOM
+MEND
+
