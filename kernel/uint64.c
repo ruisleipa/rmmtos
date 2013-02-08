@@ -76,7 +76,7 @@ void sub64(Uint64* a, Uint64* b)
 	}
 }
 
-void shl64(Uint64* p, unsigned int n)
+void shr64(Uint64* p, unsigned int n)
 {
 	while(n > 16)
 	{

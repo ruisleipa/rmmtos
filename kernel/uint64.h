@@ -13,7 +13,7 @@ void inc64(Uint64* a);
 void set64(Uint64* a, Uint64* b);
 void add64(Uint64* a, Uint64* b);
 void sub64(Uint64* a, Uint64* b);
-void shl64(Uint64* a, unsigned int n);
+void shr64(Uint64* a, unsigned int n);
 
 #endif
 

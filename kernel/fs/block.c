@@ -58,7 +58,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 		return 0;
 
 	set64(&block, &handle->position);
-	shl64(&block, block_file->block_size_exponent);
+	shr64(&block, block_file->block_size_exponent);
 
 	set64(&begin_block, &block);
 
@@ -67,7 +67,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 	init64(&t, 0, 0, 0, size - 1);
 
 	add64(&end_block, &t);
-	shl64(&end_block, block_file->block_size_exponent);
+	shr64(&end_block, block_file->block_size_exponent);
 
 	while(cmp64(&block, &end_block) <= 0)
 	{
