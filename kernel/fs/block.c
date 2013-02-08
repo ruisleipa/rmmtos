@@ -81,8 +81,6 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 		else
 			part_size = block_size;
 
-		part_size -= part_begin;
-
 		if(part_begin != 0 || part_size != block_size)
 		{
 			if(!tmp)
