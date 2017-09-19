@@ -4,7 +4,8 @@ CFLAGS = -0 -O86 -ansi -I./
 OBJS = 	init.o \
 	memory.o \
 	io.o \
-	sys.o
+	sys.o \
+	string.o
 
 all: init.bin
 
