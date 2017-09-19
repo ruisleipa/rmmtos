@@ -19,9 +19,9 @@ OBJS = 	start.o \
 	malloc.o \
 	syscall.o \
 	clock.o \
-   bcc/bcc_long.o \
-   bcc/bcc_int.o \
-   bcc/ldivmod.o \
+	bcc/bcc_long.o \
+	bcc/bcc_int.o \
+	bcc/ldivmod.o \
 	fs/fat/fat.o \
 	fs/devfs/devfs.o \
 	fs/directory.o \
