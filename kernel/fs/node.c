@@ -7,6 +7,7 @@ void node_init(struct Node* node, char* name, unsigned int flags)
 	node->refcount = 0;
 	node->writers = 0;
 	node->readers = 0;
+	node->next = 0;
 }
 
 void node_acquire(struct Node* node)

@@ -12,7 +12,7 @@ struct Node* vfs_resolve_path(char* path)
 	char* part;
 	char* ptr;
 	struct Node* node = vfs_root;
-	struct DirectoryReadHandle* handle = 0;
+	struct DirectoryHandle* handle = 0;
 	int first = 1;
 
 
@@ -25,6 +25,7 @@ struct Node* vfs_resolve_path(char* path)
 
 	ptr = str;
 
+	/* change directory separators to zero terminators */
 	while(*ptr != 0)
 	{
 		if(*ptr == '/')
@@ -42,6 +43,7 @@ struct Node* vfs_resolve_path(char* path)
 
 			if(first && (strcmp("", part) == 0))
 			{
+				/* root path, break out */
 				break;
 			}
 

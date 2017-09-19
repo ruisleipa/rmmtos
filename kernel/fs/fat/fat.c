@@ -56,7 +56,7 @@ void parse_params(struct Parameters* params, struct FatRootDirectory* directory)
 	unsigned long root_start = params->reserved_sectors + (params->fats * params->sectors_per_fat) * params->bytes_per_sector;
 	int i;
 	char* a = params;
-
+/*
 	printf("handle: %x%x\n", (root_start&0xffff0000) >> 16, root_start&0xffff);
 	//printf("oem: %s\n", params->oem);
 	printf("root_entries: %d\n", params->root_entries);
@@ -72,7 +72,7 @@ void parse_params(struct Parameters* params, struct FatRootDirectory* directory)
 
 		printf("%a ", a[i]);
 	}
-
+*/
 	directory->root_entries = params->root_entries;
 	init64(&directory->root_begin, 0, root_start);
 }

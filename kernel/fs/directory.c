@@ -2,13 +2,6 @@
 
 #include "panic.h"
 
-struct CachedNode
-{
-	struct Node* node;
-	struct Directory* parent;
-	struct CachedNode* next;
-};
-
 #define READ 1
 #define WRITE 2
 
@@ -16,35 +9,34 @@ static char* non_dir = "dir op on non-dir";
 static char* NOT_READ = "read op on non-read handle";
 static char* NOT_WRITE = "write op on non-write handle";
 
-static int add_cached_node(struct Directory* directory, struct Node* node)
+void directory_add_to_children(struct Directory* directory, struct Node* node)
 {
-	struct CachedNode* cached_node = malloc(sizeof(struct CachedNode));
+	printf("adtc: %s %x %s %x \n", node->name, node->next, node->next->name, node->flags);
 
-	if(!cached_node)
-		return 0;
+	if(node->next) {
+		panic("adding node to two dirs");
+	}
 
-	cached_node->node = node;
-	cached_node->parent = directory;
-	cached_node->next = directory->cached_nodes;
-	directory->cached_nodes = cached_node;
+	// TODO: need to add somewhere else other than front?
 
-	return 1;
+	node->next = directory->child;
+	directory->child = node;
 }
 
-struct Directory* directory_create_node(char* name, unsigned int flags, struct FileOps* ops)
+struct Directory* directory_create_node(char* name, unsigned int flags, struct DirectoryOps* ops)
 {
 	struct Directory* directory = malloc(sizeof(struct Directory));
-	struct Node* node = directory;
 
 	if(directory)
 	{
 		node_init(directory, name, DIRECTORY | (flags & ATTRIBUTE_MASK));
 
 		directory->ops = ops;
-		directory->cached_nodes = 0;
-	}
+		directory->child = 0;
+		directory->redirect = 0;
 
-	node_acquire(directory);
+		node_acquire(directory);
+	}
 
 	return directory;
 }
@@ -68,6 +60,9 @@ struct DirectoryHandle* directory_open(struct Node* node, unsigned int mode)
 	if(!directory)
 		panic(non_dir);
 
+	if(directory->redirect)
+		directory = directory->redirect;
+
 	if(directory->ops && directory->ops->open)
 		handle = directory->ops->open(directory, mode);
 	else
@@ -75,7 +70,7 @@ struct DirectoryHandle* directory_open(struct Node* node, unsigned int mode)
 
 	if(handle)
 	{
-		handle->super.node = node;
+		handle->super.node = directory;
 		handle->super.flags = DIRECTORY | mode;
 
 		if(mode & HANDLE_WRITE)
@@ -84,7 +79,7 @@ struct DirectoryHandle* directory_open(struct Node* node, unsigned int mode)
 		if(mode & HANDLE_READ)
 			handle->super.node->readers++;
 
-		node_acquire(node);
+		node_acquire(directory);
 	}
 
 	return handle;
@@ -103,7 +98,7 @@ void directory_close(struct DirectoryHandle* handle)
 	free(handle);
 }
 
-struct Node* directory_get_node(struct DirectoryHandle* handle)
+struct Node* directory_get_next_node(struct DirectoryHandle* handle, struct Node* current_node)
 {
 	struct Directory* directory = handle->super.node;
 	struct Node* node = 0;
@@ -111,24 +106,34 @@ struct Node* directory_get_node(struct DirectoryHandle* handle)
 	if(!((handle->super.flags & ATTRIBUTE_MASK) & HANDLE_READ))
 		panic(NOT_READ);
 
-	if(directory->ops && directory->ops->get_node)
+	if(directory->ops && directory->ops->get_next_node)
 	{
-		node = directory->ops->get_node(handle);
+		node = directory->ops->get_next_node(handle, current_node);
 
-		add_cached_node(directory, node);
+		directory_add_to_children(directory, node);
+	}
+	else
+	{
+		if(!current_node)
+		{
+			node = directory->child;
+		}
+		else
+		{
+			node = current_node->next;
+		}
 	}
 
 	if(node)
 		node_acquire(node);
 
-	return handle;
+	return node;
 }
 
 struct Node* directory_find_node(struct DirectoryHandle* handle, char* name)
 {
 	struct Directory* directory = handle->super.node;
 	struct Node* node;
-	struct CachedNode* cached_node;
 
 	printf("handle->super.flags: %x\n", handle->super.flags);
 
@@ -136,29 +141,28 @@ struct Node* directory_find_node(struct DirectoryHandle* handle, char* name)
 		panic(NOT_READ);
 
 	/* first check if the node is in memory */
-	cached_node = directory->cached_nodes;
+	node = directory->child;
 
-	while(cached_node)
+	while(node)
 	{
-		if(strcmp(cached_node->node->name, name) == 0)
+		if(strcmp(node->name, name) == 0)
 		{
-			node = cached_node->node;
 			break;
 		}
-
-		cached_node = cached_node->next;
 	}
 
 	/* not loaded, get it from the file system */
 	if(!node && directory->ops && directory->ops->find_node)
 	{
 		node = directory->ops->find_node(handle, name);
-
-		add_cached_node(directory, node);
+		
+		directory_add_to_children(directory, node);
 	}
 
-	if(node)
+	if(node) {
 		node_acquire(node);
+	}
+
 
 	return node;
 }
@@ -172,15 +176,21 @@ struct Node* directory_add_node(struct DirectoryHandle* handle, struct Node* nod
 		panic(NOT_WRITE);
 
 	if(directory->ops && directory->ops->add_node)
-		result = directory->ops->add_node(handle, node);
-	else
-		result = 1;
-
-	if(result)
 	{
-		add_cached_node(directory, node);
-		node_acquire(node);
+		node = directory->ops->add_node(handle, node);
+	}
+	else
+	{
+		directory_add_to_children(directory, node);
 	}
 
 	return node;
 }
+
+void directory_redirect(struct Directory* directory, struct Directory* destination)
+{
+	printf("redirecting %s to %s\n", directory->super.name, destination->super.name);
+
+	directory->redirect = destination;
+}
+

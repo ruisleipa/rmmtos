@@ -22,6 +22,7 @@ struct Node
 	unsigned int refcount;
 	unsigned int writers;
 	unsigned int readers;
+	struct Node* next;
 };
 
 struct Handle
