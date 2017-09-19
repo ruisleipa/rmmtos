@@ -23,6 +23,7 @@ OBJS = 	start.o \
 	bcc/bcc_int.o \
 	bcc/ldivmod.o \
 	fs/fat/fat.o \
+	fs/ramfs/ramfs.o \
 	fs/devfs/devfs.o \
 	fs/directory.o \
 	fs/file.o \
