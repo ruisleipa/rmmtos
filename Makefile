@@ -5,10 +5,10 @@ image: kernel boot
 	dd if=/dev/zero of=floppy.img bs=512 count=2880
 	mkfs.msdos floppy.img
 	sudo mount floppy.img /mnt -o loop,umask=0
-	dd if=boot/boot.bin of=floppy.img bs=512 conv=notrunc
 	-cp kernel/kernel.bin /mnt
 	-cp kernel/symbols.bin /mnt
 	sudo umount /mnt
+	dd if=boot/boot.bin of=floppy.img bs=512 conv=notrunc
 
 .PHONY: floppy
 image.win: kernel boot
