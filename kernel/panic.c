@@ -29,3 +29,9 @@ asm("hlt");
 	asm("hlt");
 }
 
+
+void do_trace(char* file,unsigned int line)
+{
+	printf("Trace on line %d of \"%s\".\n", line, file);
+}
+
