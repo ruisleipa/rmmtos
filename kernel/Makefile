@@ -36,8 +36,9 @@ OBJS = 	start.o \
 
 all: kernel.bin kernel_sym.bin
 
-.PHONY: init.bin.s
-init.bin.s:
+task.o: init.bin.s
+
+init.bin.s: ../init/init.bin
 	cat ../init/init.bin | xxd -p -c1 > init.bin.s
 	sed -i -e "s/^/DB 0x/" init.bin.s
 
