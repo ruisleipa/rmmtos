@@ -149,6 +149,8 @@ struct Node* directory_find_node(struct DirectoryHandle* handle, char* name)
 		{
 			break;
 		}
+
+		node = node->next;
 	}
 
 	/* not loaded, get it from the file system */
