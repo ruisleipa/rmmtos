@@ -33,14 +33,14 @@ extern void* _end;
 void tree(struct Node* root, int indent);
 void print_cached_nodes(struct Directory* root, int indent);
 
-void main()
-{
+void main() {
 	struct Directory* root;
+	struct Directory* dir;
 	struct DirectoryHandle* handle;
 
 	screen_init();
 
-	malloc_init((void*)&_end,(void*)0xf000);
+	malloc_init((void*) &_end, (void*) 0xf000);
 
 	intr_init();
 
@@ -64,61 +64,69 @@ void main()
 
 	directory_close(handle);
 
-	directory_redirect(vfs_resolve_path("/devices"), devfs_get_root());
+	dir = vfs_get_node_for_path("/devices");
 
+	if (!dir) {
+		panic("cannot find mountpoint for devfs");
+	}
+
+	directory_redirect(dir, devfs_get_root());
+
+	printf("Filesystem (VFS):\n");
 	tree(root, 0);
+	printf("Filesystem (Debug):\n");
 	print_cached_nodes(root, 0);
 
 	malloc_stats();
 	return;
 }
 
-void tree(struct Node* directory, int indent)
-{
+void tree(struct Node* node, int indent) {
 	int i, j;
-	struct Node* child;
-	struct DirectoryHandle* handle;
 
-	handle = directory_open(directory, HANDLE_READ);
+	j = indent;
 
-	child = directory_get_next_node(handle, 0);
+	while (j > 0)
+		printf("\t", j--);
 
-	while(child) {
-		j = indent;
+	printf("%x:'%s' %x\n", node, node->name, node->flags);
 
-		while(j > 0)
-			printf(" ", j--);
+	if (node->flags & DIRECTORY) {
+		struct DirectoryHandle* handle = directory_open(node, HANDLE_READ);
+		struct Node* child = directory_get_next_node(handle, 0);
 
-		printf("'%s' %x\n", child->name, child->flags);
-
-		if(child->flags & DIRECTORY)
+		while (child) {
 			tree(child, indent + 1);
 
-		child = directory_get_next_node(handle, child);
+			child = directory_get_next_node(handle, child);
+		}
 	}
 }
 
-void print_cached_nodes(struct Directory* directory, int indent)
-{
+void print_cached_nodes(struct Node* node, int indent) {
 	int i, j;
 	struct Node* child;
 
-	if(directory->redirect)
-		directory = directory->redirect;
+	j = indent;
 
-	child = directory->child;
-
-	while(child) {
-		j = indent;
-
-		while(j > 0)
-			printf(" ", j--);
+	while (j > 0)
+		printf("\t", j--);
 
 		printf("'%s' %x\n", child->name, child->flags);
 
-		if(child->flags & DIRECTORY)
+	if (node->flags & DIRECTORY) {
+		struct Directory* directory = node;
+		struct Node* child;
+
+		if (directory->redirect)
+			directory = directory->redirect;
+
+		child = directory->child;
+
+		while (child) {
 			tree(child, indent + 1);
 
-		child = child->next;
+			child = child->next;
+		}
 	}
 }
