@@ -8,17 +8,25 @@ void printstr(struct File* f, char* str);
 
 int main()
 {
-	struct File* floppy = openFile("/floppy0", READ);
-	struct File* screen = openFile("/screen", WRITE);
+	struct File* floppy = openFile("/devices/floppy0", READ);
+	struct File* screen = openFile("/devices/screen", WRITE);
 	char* buffer = allocateMemory(BUFFER);
 	unsigned int i;
 	unsigned char newline = '\n';
 	unsigned char dot = '.';
 
+	printstr(screen, "Hello from init!");
+
 	clearMemory(buffer, BUFFER);
+
+	printstr(screen, "Sleeping.");
+	sys_sleep(6000);
+	printstr(screen, "Slept for 6 seconds.\n");
 
         printstr(screen, "Mounting filesystems:\n");
 	sys_mount();
+
+
 
 	if(!buffer)
 	{

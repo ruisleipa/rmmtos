@@ -123,3 +123,22 @@ unsigned int sys_mount()
 	pop bp
 #endasm
 }
+
+unsigned int sys_sleep()
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	push bx
+
+	mov ax, #11
+	mov bx, 4[bp]
+
+	int $80
+
+	pop bx
+
+	pop bp
+#endasm
+}
