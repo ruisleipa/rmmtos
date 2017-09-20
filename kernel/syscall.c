@@ -71,7 +71,7 @@ unsigned int sys_open_file(struct Task* task)
 	unsigned int id = 0;
 
 	if(path)
-		node = vfs_resolve_path(path);
+		node = vfs_get_node_for_path(path);
 
 	if(node)
 	{
@@ -181,7 +181,7 @@ unsigned int sys_mount(struct Task* task)
 {
 	printf("sys_mount unimplemented\n");
 
-	create_fat_fs(vfs_resolve_path("/floppy0"));
+	create_fat_fs(vfs_get_node_for_path("/floppy0"));
 
 	return -1;
 }
