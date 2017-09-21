@@ -22,6 +22,7 @@ struct VfsPathResolution* vfs_start_resolve(char* path);
 int vfs_advance_resolution(struct VfsPathResolution* resolution);
 
 void vfs_free_path_resolution(struct VfsPathResolution* res);
+struct Directory* vfs_create_filesystem(char* type, struct Node* node);
 
 #endif
 

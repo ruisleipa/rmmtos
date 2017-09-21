@@ -2,6 +2,9 @@
 #include "malloc.h"
 #include "string.h"
 #include "directory.h"
+#include "devfs/devfs.h"
+#include "ramfs/ramfs.h"
+#include "fat/fat.h"
 
 char* ERROR_NODE_INV_OPS = "Node has invalid ops";
 
@@ -140,4 +143,17 @@ struct Node* vfs_get_node_for_path(char* path)
 void vfs_set_root(struct Node* node)
 {
 	vfs_root = node;
+}
+
+struct Directory* vfs_create_filesystem(char* type, struct Node* node)
+{
+	if(strcmp(type, "fat") == 0) {
+		return create_fat_fs(node);
+	} else if(strcmp(type, "ram") == 0) {
+		return ramfs_create();
+	} else if(strcmp(type, "dev") == 0) {
+		return devfs_get_root();
+	}
+
+	return 0;
 }
