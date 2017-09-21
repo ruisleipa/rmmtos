@@ -99,3 +99,27 @@ void shr64(Uint64* p, unsigned int n)
 
 	p->i[3] >>= n;
 }
+
+void shl64(Uint64* p, unsigned int n)
+{
+	while(n > 16)
+	{
+		p->i[3] = p->i[2];
+		p->i[2] = p->i[1];
+		p->i[1] = p->i[0];
+		p->i[0] = 0;
+
+		n -= 16;
+	}
+
+	p->i[3] <<= n;
+	p->i[3] |= p->i[2] >> n;
+
+	p->i[2] <<= n;
+	p->i[2] |= p->i[1] >> n;
+
+	p->i[1] <<= n;
+	p->i[1] |= p->i[0] >> n;
+
+	p->i[0] <<= n;
+}

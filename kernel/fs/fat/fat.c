@@ -36,73 +36,132 @@ struct FatRootDirectory
 	struct Directory super;
 
 	Uint64 root_begin;
-	unsigned int root_entries;
+	Uint64 root_end;
 	struct FileHandle* handle;
 };
 
-struct Parameters* fat_read_parameters(struct FileHandle* handle)
+struct FatFile
+{
+	struct File super;
+
+	char name[8+3+1];
+	Uint64 entry_position;
+};
+
+struct Parameters* fat_read_parameters(struct Parameters* params, struct FileHandle* handle)
 {
 	char* mbr = malloc(512);
-	struct Parameters* params = malloc(sizeof(struct Parameters));
+	Uint64 zero;
+
+	init64_32(&zero, 0, 0);
 
 	if(mbr)
 	{
+		file_seek(handle, &zero);
+		file_read(handle, mbr, 512);
 
+		memcpy(&params->bytes_per_sector, &mbr[11], sizeof(params->bytes_per_sector));
+		memcpy(&params->sectors_per_cluster, &mbr[13], sizeof(params->sectors_per_cluster));
+		memcpy(&params->reserved_sectors, &mbr[14], sizeof(params->reserved_sectors));
+		memcpy(&params->fats, &mbr[16], sizeof(params->fats));
+		memcpy(&params->root_entries, &mbr[17], sizeof(params->root_entries));
+		memcpy(&params->sectors_per_fat, &mbr[22], sizeof(params->sectors_per_fat));
+		memcpy(&params->hidden_sectors, &mbr[28], sizeof(params->hidden_sectors));
+		memcpy(&params->total_sectors, &mbr[32], sizeof(params->total_sectors));
+
+		free(mbr);
 	}
 }
 
 void parse_params(struct Parameters* params, struct FatRootDirectory* directory)
 {
-	unsigned long root_start = params->reserved_sectors + (params->fats * params->sectors_per_fat) * params->bytes_per_sector;
-	int i;
-	char* a = params;
-/*
-	printf("handle: %x%x\n", (root_start&0xffff0000) >> 16, root_start&0xffff);
-	//printf("oem: %s\n", params->oem);
-	printf("root_entries: %d\n", params->root_entries);
-	printf("reserved_sectors: %d\n", params->reserved_sectors);
-	printf("fats: %d\n", (unsigned int)params->fats);
-	printf("sectors_per_fat: %d\n", params->sectors_per_fat);
-	printf("bytes_per_sector: %d\n", params->bytes_per_sector);
+	init64(&directory->root_begin, 0, 0, 0, (params->reserved_sectors + (params->fats * params->sectors_per_fat)));
 
-	for(i = 0; i < sizeof(struct Parameters); i++)
-	{
-		if(i % 16 == 0 && i != 0)
-			printf("\n");
+	init64(&directory->root_end, 0, 0, 0, params->root_entries * 32);
+	add64(&directory->root_end, &directory->root_begin);
 
-		printf("%a ", a[i]);
-	}
-*/
-	directory->root_entries = params->root_entries;
-	init64(&directory->root_begin, 0, root_start);
+	shl64(&directory->root_begin, 9);
+	shl64(&directory->root_end, 9);
 }
+
+#define FLAG_DIRECTORY 0x10
+#define FLAG_VOLUME 0x04
+
+struct Node* fat_root_get_next_node(struct DirectoryHandle* handle, struct FatFile* current_node)
+{
+	struct FatRootDirectory* directory = handle->super.node;
+	Uint64 position;
+	struct DirectoryEntry entry;
+
+	if(!current_node) {
+		set64(&position, &directory->root_begin);
+	} else {
+		init64(&position, 0, 0, 0, sizeof(struct DirectoryEntry));
+		add64(&position, &current_node->entry_position);
+	}
+
+	file_seek(directory->handle, &position);
+
+	while(cmp64(&position, &directory->root_end) < 0) {
+		set64(&position, &directory->handle->position);
+		file_read(directory->handle, &entry, sizeof(entry));
+
+		if(entry.attributes & FLAG_VOLUME) {
+			continue;
+		}
+
+		if(entry.name[0] == 0xe5) {
+			continue;
+		}
+
+		if(entry.name[0] == 0x00) {
+			break;
+		}
+
+		{
+			struct File* file = file_create_node(0, 0, 0);
+			struct FatFile* fat_file = realloc(file, sizeof(*fat_file));
+
+			memcpy(fat_file->name, &entry.name, 8 + 3);
+			fat_file->name[8 + 3] = 0;
+
+			// XXX: self referential pointer, invalid on realloc
+			fat_file->super.super.name = fat_file->name;
+
+			set64(&fat_file->entry_position, &position);
+
+			return fat_file;
+		}
+	}
+
+	return 0;
+}
+
+static struct DirectoryOps fat_root_dir_ops = {
+	0,
+	fat_root_get_next_node,
+	0,
+	0
+};
 
 struct Directory* create_fat_fs(struct File* data)
 {
-	struct FatRootDirectory* directory = malloc(sizeof(struct FatRootDirectory));
+	struct Directory* directory = directory_create_node("", 0, &fat_root_dir_ops);
 	struct FileHandle* handle = file_open(data, HANDLE_READ);
 	struct Parameters* params = malloc(sizeof(struct Parameters));
-	struct DirectoryEntry entry;
-	unsigned int fat_type;
-	int i;
+	struct FatRootDirectory* root_directory = realloc(directory, sizeof(*root_directory));
+
+	printf("create_fat_fs: %x %x %x\n", root_directory, params, handle);
 
 	if(directory && params && handle)
 	{
 		fat_read_parameters(params, handle);
-		parse_params(params, directory);
-
-		file_seek(handle, &directory->root_begin);
-
-		for(i = 0; i < directory->root_entries; ++i)
-		{
-			file_read(handle, &entry, sizeof(entry));
-
-			printf("%s %b\n", entry.name, entry.attributes);
-		}
+		parse_params(params, root_directory);
 	}
 
-	file_close(handle);
+	root_directory->handle = handle;
+
 	free(params);
 
-	return directory;
+	return root_directory;
 }
