@@ -5,6 +5,7 @@
 #include "devfs/devfs.h"
 #include "ramfs/ramfs.h"
 #include "fat/fat.h"
+#include "panic.h"
 
 char* ERROR_NODE_INV_OPS = "Node has invalid ops";
 
