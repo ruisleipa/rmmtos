@@ -189,8 +189,16 @@ struct Node* directory_add_node(struct DirectoryHandle* handle, struct Node* nod
 	return node;
 }
 
-void directory_redirect(struct Directory* directory, struct Directory* destination)
+void directory_redirect(struct Node* node, struct Directory* destination)
 {
+	struct Directory* directory = 0;
+
+	if(node->flags & DIRECTORY)
+		directory = (struct Directory*)node;
+
+	if(!directory)
+		panic(non_dir);
+
 	printf("redirecting %s to %s\n", directory->super.name, destination->super.name);
 
 	directory->redirect = destination;
