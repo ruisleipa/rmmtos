@@ -110,7 +110,9 @@ struct Node* directory_get_next_node(struct DirectoryHandle* handle, struct Node
 	{
 		node = directory->ops->get_next_node(handle, current_node);
 
-		directory_add_to_children(directory, node);
+		if(node) {
+			directory_add_to_children(directory, node);
+		}
 	}
 	else
 	{
@@ -124,8 +126,7 @@ struct Node* directory_get_next_node(struct DirectoryHandle* handle, struct Node
 		}
 	}
 
-	if(node)
-		node_acquire(node);
+
 
 	return node;
 }
