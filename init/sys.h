@@ -11,5 +11,6 @@ unsigned int sys_read(unsigned int handle, char* buffer, struct Int64* position,
 unsigned int sys_write(unsigned int handle, char* buffer, struct Int64* position, unsigned int size);
 
 unsigned int sys_sleep(unsigned int milliseconds);
+unsigned int sys_mount(char* destination_path, char* type, char* source_path);
 
 #endif

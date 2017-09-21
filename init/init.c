@@ -20,13 +20,11 @@ int main()
 	clearMemory(buffer, BUFFER);
 
 	printstr(screen, "Sleeping.");
-	sys_sleep(6000);
-	printstr(screen, "Slept for 6 seconds.\n");
+	sys_sleep(1000);
+	printstr(screen, "Slept for 1 seconds.\n");
 
-        printstr(screen, "Mounting filesystems:\n");
-	sys_mount();
-
-
+        printstr(screen, "Mounting floppy:\n");
+	sys_mount("/floppy", "fat", "/devices/floppy0");
 
 	if(!buffer)
 	{
@@ -38,7 +36,8 @@ int main()
 	{
 		sys_exit(1);
 		while(1);
-	}
+	}sys_exit(2);
+	while(1);
         printstr(screen, "The following is read from floppy:\n");
 
 	readFile(floppy, buffer, BUFFER);

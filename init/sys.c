@@ -110,21 +110,32 @@ unsigned int sys_write_file(unsigned int handle, char* buffer, unsigned int size
 #endasm
 }
 
-unsigned int sys_mount()
+unsigned int sys_mount(char* destination_path, char* type, char* source_path)
 {
-#asm
+#asm ,type,source_path
 	push bp
 	mov  bp, sp
 
+		push bx
+	push cx
+	push dx
+
 	mov ax, #7
+	mov bx, 4[bp]
+	mov cx, 6[bp]
+	mov dx, 8[bp]
 
 	int $80
+
+	pop dx
+	pop cx
+	pop bx
 
 	pop bp
 #endasm
 }
 
-unsigned int sys_sleep()
+unsigned int sys_sleep(unsigned int milliseconds)
 {
 #asm
 	push bp
