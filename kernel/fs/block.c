@@ -47,6 +47,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 	Uint64 t;
 	unsigned int part_begin;
 	unsigned int part_size;
+	unsigned int done = 0;
 
 	unsigned int offset_mask = ~(0xffff << block_file->block_size_exponent);
 
@@ -63,7 +64,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 	set64(&begin_block, &block);
 
 	set64(&end_block, &handle->position);
-	/* adding (block_size - 1) to get correct end block number rounding */
+	/* adding size would be one past the end so -1 */
 	init64(&t, 0, 0, 0, size - 1);
 
 	add64(&end_block, &t);
@@ -77,9 +78,9 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 			part_begin = 0;
 
 		if(cmp64(&block, &end_block) == 0)
-			part_size = size;
+			part_size = size - done;
 		else
-			part_size = block_size;
+			part_size = block_size - part_begin;
 
 		if(part_begin != 0 || part_size != block_size)
 		{
@@ -91,7 +92,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 
 			block_file->ops->read(handle, tmp, &block);
 
-			memcpy(buffer, tmp + part_begin, part_size);
+			memcpy(buffer, &tmp[part_begin], part_size);
 		}
 		else
 		{
@@ -99,6 +100,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 		}
 
 		buffer += part_size;
+		done += part_size;
 
 		init64(&t, 0, 0, 0, part_size);
 
