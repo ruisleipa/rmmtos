@@ -4,8 +4,8 @@
 #include "fs/block.h"
 #include "panic.h"
 
-unsigned int floppy_read(struct File* file, char* buffer, unsigned int lba);
-unsigned int floppy_write(struct File* file, char* buffer, unsigned int lba);
+unsigned int floppy_read(struct File* file, char* buffer, Uint64* block);
+unsigned int floppy_write(struct File* file, char* buffer, Uint64* block);
 
 static struct BlockFileOps floppy_ops =
 {
@@ -153,12 +153,12 @@ static void floppy_recalibrate()
 	floppy_sense();
 }
 
-static void floppy_seek(unsigned char cylinder)
+static void floppy_seek(unsigned char cylinder, unsigned char head)
 {
 	irq_set_wakeup(current_task, 6);
 
 	floppy_write_cmd(CMD_SEEK);
-	floppy_write_cmd(0);
+	floppy_write_cmd(0 | ((head & 0x1) << 2));
 	floppy_write_cmd(cylinder);
 
 	task_sleep(current_task);
@@ -214,7 +214,7 @@ static void floppy_transfer(int dir, unsigned char cyl, unsigned char head, unsi
 	irq_set_wakeup(current_task, 6);
 
 	floppy_write_cmd(command);
-	floppy_write_cmd(head & 0x1 << 2);
+	floppy_write_cmd((head & 0x1) << 2);
 	floppy_write_cmd(cyl);
 	floppy_write_cmd(head);
 	floppy_write_cmd(sec);
@@ -256,9 +256,7 @@ unsigned int floppy_read(struct File* node, char* buffer, Uint64* block)
 	floppy_specify();
 	floppy_set_data_rate();
 	floppy_recalibrate();
-	floppy_seek(cylinder);
-
-
+	floppy_seek(cylinder, head);
 
 	floppy_set_dma(buffer, SEC_SZ, READ);
 	floppy_transfer(READ, cylinder, head, sector);
