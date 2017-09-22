@@ -61,6 +61,7 @@ void main() {
 	handle = directory_open(root, HANDLE_WRITE);
 
 	directory_add_node(handle, directory_create_node("devices", STATIC, 0));
+	directory_add_node(handle, directory_create_node("floppy", STATIC, 0));
 
 	directory_close(handle);
 
