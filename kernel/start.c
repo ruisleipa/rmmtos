@@ -101,6 +101,8 @@ void tree(struct Node* node, int indent) {
 
 			child = directory_get_next_node(handle, child);
 		}
+
+		free(handle);
 	}
 }
 
@@ -125,7 +127,7 @@ void print_cached_nodes(struct Node* node, int indent) {
 		child = directory->child;
 
 		while (child) {
-			tree(child, indent + 1);
+			print_cached_nodes(child, indent + 1);
 
 			child = child->next;
 		}
