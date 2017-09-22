@@ -9,7 +9,7 @@
 
 char* ERROR_NODE_INV_OPS = "Node has invalid ops";
 
-static struct Node* vfs_root = 0;
+struct Node* vfs_root = 0;
 
 struct VfsPathResolution* vfs_start_resolve(char* path)
 {

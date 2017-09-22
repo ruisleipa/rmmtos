@@ -172,13 +172,17 @@ void malloc_init(void* start,void* end)
 void malloc_info_terse()
 {
 	struct head* curr=first;
+	unsigned int curr_size;
 
 	do
 	{
 		if(curr==overblock)
 			break;
 
-		printf("%d",curr->free);
+		curr_size=(unsigned int)curr->next-(unsigned int)curr;
+		curr_size-=sizeof(struct head);
+
+		printf("%d %d\t", curr->free, curr_size);
 	}
 	while(curr=curr->next);
 
@@ -200,7 +204,10 @@ void malloc_info()
 		curr_size=(unsigned int)curr->next-(unsigned int)curr;
 		curr_size-=sizeof(struct head);
 
-		printf("%x free: %d size: %d bytes next: %x prev: %x\n",curr,curr->free,curr_size,curr->next,curr->prev);
+		if(!curr->free) {
+			printf("%x %d x %x B n: %x p: %x\t\t",curr,curr->free,curr_size,curr->next,curr->prev);
+		}
+
 	}
 	while(curr=curr->next);
 }

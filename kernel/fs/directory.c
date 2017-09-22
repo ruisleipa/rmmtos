@@ -190,9 +190,14 @@ struct Node* directory_add_node(struct DirectoryHandle* handle, struct Node* nod
 	return node;
 }
 
+extern struct Node* vfs_root;
+
 void directory_redirect(struct Node* node, struct Directory* destination)
 {
 	struct Directory* directory = 0;
+
+	printf("node: %s\n", node->name);
+	printf("dest: %s\n", destination->super.name);
 
 	if(node->flags & DIRECTORY)
 		directory = (struct Directory*)node;
@@ -203,5 +208,9 @@ void directory_redirect(struct Node* node, struct Directory* destination)
 	printf("redirecting %s to %s\n", directory->super.name, destination->super.name);
 
 	directory->redirect = destination;
+
+	tree(vfs_root, 0);
+	malloc_stats();
+	malloc_info_terse();
 }
 
