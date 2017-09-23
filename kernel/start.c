@@ -108,15 +108,14 @@ void tree(struct Node* node, int indent) {
 }
 
 void print_cached_nodes(struct Node* node, int indent) {
-	int i, j;
-	struct Node* child;
+	int j;
 
 	j = indent;
 
 	while (j > 0)
 		printf("\t", j--);
 
-		printf("'%s' %x\n", child->name, child->flags);
+		printf("'%s' %x\n", node->name, node->flags);
 
 	if (node->flags & DIRECTORY) {
 		struct Directory* directory = node;
