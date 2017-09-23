@@ -182,12 +182,11 @@ unsigned int sys_mount(struct Task* task)
 	char* destination_path = get_string(task, BX);
 	char* type = get_string(task, CX);
 	char* source_path = get_string(task, DX);
-	int pasa = (printf("sys_mount(\"%s\", \"%s\", \"%s\")",destination_path,type,source_path), 0);
 	struct Node* source_node = vfs_get_node_for_path(source_path);
 	struct Node* destination_node = vfs_get_node_for_path(destination_path);
 	struct Directory* file_system = vfs_create_filesystem(type, source_node);
 
-	printf("sys_mount(\"%s\", \"%s\", \"%s\")",destination_path,type,source_path);
+	printf("sys_mount(\"%s\", \"%s\", \"%s\")\n",destination_path,type,source_path);
 
 	directory_redirect(destination_node, file_system);
 
