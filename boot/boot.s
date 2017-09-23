@@ -66,7 +66,7 @@ load_root_dir:
         call read_blocks
 
 load_files:
-	mov cx, #2
+	mov cx, #3
 	mov bx, #files
 .load:
 	push cx
@@ -318,8 +318,11 @@ print:
 files:
 	.asciz 'KERNEL  BIN'
 	dw 0x0050
-	.asciz 'SYMBOLS BIN'
+	.asciz 'INIT    BIN'
+	dw 0x1050
+        .asciz 'SYMBOLS BIN'
 	dw 0x2050
+
 resetsleft:
 	db 25
 tdot:

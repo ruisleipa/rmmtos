@@ -22,12 +22,6 @@ extern void* init_end;
 
 static unsigned int task_seg = 0x1050;
 
-#asm
-_init:
-#include "init.bin.s"
-_init_end:
-#endasm
-
 void switch_stack(struct Task* old_task, struct Task* new_task)
 {
 #asm
@@ -133,9 +127,6 @@ void task_add(unsigned int segment)
 void task_init()
 {
 	task_add(task_seg);
-
-	farmemcpy(0x0000, &init, (unsigned int)(&init_end) - (unsigned int)(&init), task_seg, 0x0050);
-
 	task_seg += 0x1000;
 }
 

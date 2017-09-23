@@ -9,6 +9,7 @@ image: kernel boot floppyclean.img
 	cp floppyclean.img floppy.img
 	sudo mount floppy.img /mnt -o loop,umask=0
 	-cp kernel/kernel.bin /mnt
+	-cp init/init.bin /mnt
 	-cp kernel/symbols.bin /mnt
 	sudo umount /mnt
 	dd if=boot/boot.bin of=floppy.img bs=512 conv=notrunc
@@ -18,6 +19,7 @@ image.win: kernel boot
 	-rm floppy.img
 	./fat_imgen -c -f floppy.img -s boot/boot.bin
 	./fat_imgen -m -f floppy.img -i kernel/kernel.bin -n kernel.bin
+	./fat_imgen -m -f floppy.img -i init/init.bin -n init.bin
 	./fat_imgen -m -f floppy.img -i kernel/symbols.bin -n symbols.bin
 
 .PHONY: kernel
