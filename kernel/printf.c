@@ -12,8 +12,14 @@ void putch_set(putch_t* func)
 	putch_func=func;
 }
 
+void debug_putch(char c)
+{
+	write_serial(c);
+}
+
 void putch(char c)
 {
+	write_serial(c);
 	putch_func(c);
 }
 
@@ -25,7 +31,7 @@ void prel_putch(char c)
 	poke(0xb800,index++,0x0f);
 }
 
-void puts(char* str)
+void puts(putch_t* putch, char* str)
 {
 	while((*str)!=0)
 	{
@@ -41,38 +47,34 @@ void puthex(unsigned int val)
 
 }
 
-void putfill(int totalnums,char fillchar)
+void putfill(putch_t* putch, int totalnums,char fillchar)
 {
 	if(totalnums>0)
 	{
-		putfill(--totalnums,fillchar);
+		putfill(putch, --totalnums,fillchar);
 		putch(fillchar);
 	}
 }
 
-void putuint(unsigned int value,char base,char totalnums,char fillchar)
+void putuint(putch_t* putch, unsigned int value,char base,char totalnums,char fillchar)
 {
 	if(totalnums>0)
 		totalnums--;
 
 	if((value/base)!=0)
-		putuint(value/base,base,totalnums,fillchar);
+		putuint(putch, value/base,base,totalnums,fillchar);
 	else
-		putfill(totalnums,fillchar);
+		putfill(putch, totalnums,fillchar);
 
 	putch(digits[value%base]);
 }
 
 static MUTEX(printf_mutex);
 
-void printf(char* fmt, ...)
+void vprintf(putch_t* putch, char* fmt, va_list list)
 {
    	int fill=8;
    	char fillchar=' ';
-
-	va_list list;
-
-	va_start(list,fmt);
 
 //	lock(printf_mutex);
 
@@ -85,25 +87,25 @@ void printf(char* fmt, ...)
 			switch(*fmt)
 			{
 				case 'd':
-					putuint(va_arg(list,int),10,0,fillchar);
+					putuint(putch, va_arg(list,int),10,0,fillchar);
 					break;
 				case 's':
-					puts(va_arg(list,char*));
+					puts(putch, va_arg(list,char*));
 					break;
 				case 'b':
-					putuint(va_arg(list,int),2,fill,'0');
+					putuint(putch, va_arg(list,int),2,fill,'0');
 					break;
 				case 'c':
 					putch(va_arg(list,char));
 					break;
 				case 'h':
-					putuint(va_arg(list,int),16,4,' ');
+					putuint(putch, va_arg(list,int),16,4,' ');
 					break;
 				case 'x':
-					putuint(va_arg(list,int),16,4,'0');
+					putuint(putch, va_arg(list,int),16,4,'0');
 					break;
 				case 'a':
-					putuint(va_arg(list,int),16,2,'0');
+					putuint(putch, va_arg(list,int),16,2,'0');
 					break;
 				case '%':
 					putch('%');
@@ -125,3 +127,18 @@ void printf(char* fmt, ...)
 	//unlock(printf_mutex);
 }
 
+void debug_printf(char* fmt, ...) {
+	va_list list;
+
+	va_start(list,fmt);
+
+	vprintf(debug_putch, fmt, list);
+}
+
+void printf(char* fmt, ...) {
+	va_list list;
+
+	va_start(list,fmt);
+
+	vprintf(putch, fmt, list);
+}
