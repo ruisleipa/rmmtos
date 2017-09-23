@@ -1,9 +1,12 @@
 all: kernel boot image
 
+floppyclean.img:
+	dd if=/dev/zero of=floppyclean.img bs=512 count=2880
+	mkfs.msdos floppyclean.img
+
 .PHONY: image
-image: kernel boot
-	dd if=/dev/zero of=floppy.img bs=512 count=2880
-	mkfs.msdos floppy.img
+image: kernel boot floppyclean.img
+	cp floppyclean.img floppy.img
 	sudo mount floppy.img /mnt -o loop,umask=0
 	-cp kernel/kernel.bin /mnt
 	-cp kernel/symbols.bin /mnt
