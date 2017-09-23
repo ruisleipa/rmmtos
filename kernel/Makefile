@@ -32,6 +32,7 @@ OBJS = 	start.o \
 	fs/vfs.o \
 	char/keyb.o \
 	char/screen.o \
+	char/serial.o \
 	block/floppy.o
 
 

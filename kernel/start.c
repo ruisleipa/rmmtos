@@ -38,6 +38,7 @@ void main() {
 	struct Directory* dir;
 	struct DirectoryHandle* handle;
 
+	init_serial();
 	screen_init();
 
 	malloc_init((void*) &_end, (void*) 0xf000);
