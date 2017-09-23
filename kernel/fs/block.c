@@ -38,6 +38,17 @@ struct BlockFile* blockfile_create_node(char* name, unsigned int flags, struct B
 	return block_file;
 }
 
+struct cached_block {
+	Uint64 block;
+	struct BlockFile* block_file;
+	char* buffer;
+};
+
+// TODO: something about data races
+// TODO: evictions
+#define CACHED_BLOCKS 2
+static struct cached_block cached_block[CACHED_BLOCKS];
+
 unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned int size)
 {
 	struct BlockFile* block_file = handle->super.node;
@@ -48,6 +59,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 	unsigned int part_begin;
 	unsigned int part_size;
 	unsigned int done = 0;
+	int buffer_used;
 
 	unsigned int offset_mask = ~(0xffff << block_file->block_size_exponent);
 
@@ -82,21 +94,40 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 		else
 			part_size = block_size - part_begin;
 
-		if(part_begin != 0 || part_size != block_size)
-		{
-			if(!tmp)
-				tmp = malloc(block_size);
+		// check if block is already in cache
+		for (buffer_used = 0; buffer_used < CACHED_BLOCKS; ++buffer_used) {
+			if (cached_block[buffer_used].block_file == block_file && cmp64(&block, &cached_block[buffer_used].block) == 0) {
+				tmp = cached_block[buffer_used].buffer;
+				debug_printf("block found in cache: %x\n", block.i[0]);
+				break;
+			}
+		}
+
+		if(!tmp) {
+			debug_printf("block not found in cache: %x\n", block.i[0]);
+
+			tmp = malloc(block_size);
 
 			if(!tmp)
 				break;
 
 			block_file->ops->read(handle, tmp, &block);
-
-			memcpy(buffer, &tmp[part_begin], part_size);
 		}
-		else
-		{
-			block_file->ops->read(handle, buffer, &block);
+
+		memcpy(buffer, &tmp[part_begin], part_size);
+
+		// if new block was created see if it can be put into cache
+		if(buffer_used == CACHED_BLOCKS) {
+			for (buffer_used = 0; buffer_used < CACHED_BLOCKS; ++buffer_used) {
+				if (cached_block[buffer_used].buffer == 0) {
+					cached_block[buffer_used].buffer = tmp;
+					cached_block[buffer_used].block_file = block_file;
+					set64(&cached_block[buffer_used].block, &block);
+					debug_printf("block put in cache: %x %x %x\n", block.i[0], tmp, buffer_used);
+
+					break;
+				}
+			}
 		}
 
 		buffer += part_size;
@@ -109,8 +140,11 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 		inc64(&block);
 	}
 
-	if(tmp)
+	if(tmp && buffer_used == CACHED_BLOCKS) {
+		debug_printf("block not put in cache: %x %x\n", block.i[0], tmp);
+
 		free(tmp);
+	}
 
 	return size;
 }
