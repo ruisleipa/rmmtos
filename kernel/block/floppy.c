@@ -34,50 +34,63 @@ static char drives[DRIVES];
 
 extern struct Task* current_task;
 
+#define floppydebug debug_printf
+
 static void floppy_reset()
 {
 	int i;
+	floppydebug("floppy_reset\t");
 
 	outb(IO_DOR, 0x00);
-	for(i=1000;i>0;i--);
+
+	clock_set_wakeup(current_task, 1);
+	task_sleep(current_task);
 
 	outb(IO_DOR, 0x0c);
 }
 
 static void floppy_set_data_rate()
 {
+	floppydebug("floppy_set_data_rate\t");
 	outb(IO_CCR, CCR_DATA_RATE);
 }
 
 static int floppy_write_cmd(unsigned char byte)
 {
-	unsigned char msr = inb(IO_MSR);
-	int i;
-	for(i=1000;i>0;i--);
+	int i = 0;
+	unsigned char msr;
 
-	if((msr & 0xc0) == 0x80)
+	floppydebug("floppy_write_cmd\t");
+	while(((msr = inb(IO_MSR)) & 0xc0) != 0x80)
 	{
-		outb(IO_FIFO, byte);
-		return 1;
+		if(i++ > 30) {
+			printf("floppy_write_cmd msr was %a\n", msr);
+
+			return 0;
+		}
 	}
 
-	panic("write");
-	return 0;
+	outb(IO_FIFO, byte);
+	return 1;
 }
 
 static int floppy_read_result(unsigned char* byte)
 {
-	unsigned char msr = inb(IO_MSR);
-	int i;
-	for(i=1000;i>0;i--);
-	while((msr & 0xc0) == 0xc0)
+	int i = 0;
+	unsigned char msr;
+
+	floppydebug("floppy_read_result\t");
+	while(((msr = inb(IO_MSR)) & 0xc0) != 0xc0)
 	{
-		*byte = inb(IO_FIFO);
-		return 1;
+		if(i++ > 30) {
+			printf("floppy_read_result msr was %a\n", msr);
+
+			return 0;
+		}
 	}
 
-	panic("read");
-	return 0;
+	*byte = inb(IO_FIFO);
+	return 1;
 }
 
 static int floppy_sense()
@@ -85,36 +98,33 @@ static int floppy_sense()
 	unsigned char status0;
 	unsigned char cylinder;
 
-	int result = 1;
+	floppydebug("floppy_sense\t");
+	return floppy_write_cmd(CMD_SENSE)
+		&& floppy_read_result(&status0)
+		&& floppy_read_result(&cylinder);
 
-	result &= floppy_write_cmd(CMD_SENSE);
-	result &= floppy_read_result(&status0);
-	result &= floppy_read_result(&cylinder);
-
-	return result;
 }
 
 #define IMPLIED_SEEK 0
 #define FIFO_DISABLE 0
-#define POLLING_ENABLE 0
+#define POLLING_DISABLE 1
 #define TRESHOLD 0
 
 static int floppy_configure()
 {
-	int result = 1;
 	unsigned char b2 = 0;
 
 	b2 |= IMPLIED_SEEK << 6;
 	b2 |= FIFO_DISABLE << 5;
-	b2 |= POLLING_ENABLE << 4;
+	b2 |= POLLING_DISABLE << 4;
 	b2 |= TRESHOLD;
 
-	result &= floppy_write_cmd(CMD_CONFIGURE);
-	result &= floppy_write_cmd(0);
-	result &= floppy_write_cmd(b2);
-	result &= floppy_write_cmd(0);
+	floppydebug("floppy_configure\t");
 
-	return result;
+	return floppy_write_cmd(CMD_CONFIGURE)
+		&& floppy_write_cmd(0)
+		&& floppy_write_cmd(b2)
+		&& floppy_write_cmd(0);
 }
 
 #define STEP_RATE 8
@@ -124,17 +134,17 @@ static int floppy_configure()
 
 static int floppy_specify()
 {
-	int result = 1;
+	floppydebug("floppy_specify\t");
 
-	result &= floppy_write_cmd(CMD_SPECIFY);
-	result &= floppy_write_cmd((STEP_RATE << 4) | (HEAD_UNLOAD_TIME & 0xf));
-	result &= floppy_write_cmd((HEAD_LOAD_TIME << 1));
-
-	return result;
+	return floppy_write_cmd(CMD_SPECIFY)
+		&& floppy_write_cmd((STEP_RATE << 4) | (HEAD_UNLOAD_TIME & 0xf))
+		&& floppy_write_cmd((HEAD_LOAD_TIME << 1));
 }
 
 static void floppy_select_drive()
 {
+	floppydebug("floppy_select_drive\t");
+
 	outb(IO_DOR, 0x1C);
 
 	clock_set_wakeup(current_task, 500);
@@ -143,6 +153,8 @@ static void floppy_select_drive()
 
 static void floppy_recalibrate()
 {
+	floppydebug("floppy_recalibrate\t");
+
 	irq_set_wakeup(current_task, 6);
 
 	floppy_write_cmd(CMD_RECALIBRATE);
@@ -155,6 +167,8 @@ static void floppy_recalibrate()
 
 static void floppy_seek(unsigned char cylinder, unsigned char head)
 {
+	floppydebug("floppy_seek\t");
+
 	irq_set_wakeup(current_task, 6);
 
 	floppy_write_cmd(CMD_SEEK);
@@ -173,6 +187,8 @@ static void floppy_seek(unsigned char cylinder, unsigned char head)
 
 static void floppy_set_dma(unsigned int buffer, unsigned int count, int dir)
 {
+	floppydebug("floppy_set_dma\t");
+
 	buffer += KERNEL_BASE;
 
 	/* mask channel */
@@ -205,6 +221,7 @@ static void floppy_transfer(int dir, unsigned char cyl, unsigned char head, unsi
 {
 	unsigned char command;
 	unsigned char st0, st1, st2, rcy, rhe, rse, bps;
+	floppydebug("floppy_transfer\t");
 
 	if(dir == WRITE)
 		command = CMD_WRITE;
