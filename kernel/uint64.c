@@ -13,6 +13,24 @@ void init64(Uint64* p, unsigned int hh, unsigned int hl, unsigned int lh, unsign
 	p->i[3] = hh;
 }
 
+int cmp64_16(Uint64* a, unsigned int b)
+{
+	int i;
+
+	for(i = 3; i > 0; --i)
+	{
+		if(a->i[i] > 0)
+			return 1;
+	}
+
+	if(a->i[i] > b)
+		return 1;
+	if(a->i[i] < b)
+		return -1;
+
+	return 0;
+}
+
 int cmp64(Uint64* a, Uint64* b)
 {
 	int i;
@@ -40,6 +58,18 @@ void inc64(Uint64* a)
 	}
 }
 
+void dec64(Uint64* a)
+{
+	unsigned int carry = 1;
+	unsigned int i;
+
+	for(i = 0; i < 4; ++i)
+	{
+		a->i[i] -= carry;
+		carry = (a->i[i] > carry);
+	}
+}
+
 void set64(Uint64* a, Uint64* b)
 {
 	a->i[0] = b->i[0];
@@ -62,6 +92,21 @@ void add64(Uint64* a, Uint64* b)
 	}
 }
 
+void add64_16(Uint64* a, unsigned int b)
+{
+	unsigned int carry = 0;
+	unsigned int t = 0;
+	unsigned int i;
+
+	for(i = 0; i < 4; ++i)
+	{
+		t = b + carry;
+		b = 0;
+		a->i[i] += t;
+		carry = (a->i[i] < t);
+	}
+}
+
 void sub64(Uint64* a, Uint64* b)
 {
 	unsigned int carry = 0;
@@ -76,10 +121,13 @@ void sub64(Uint64* a, Uint64* b)
 	}
 }
 
-void shr64(Uint64* p, unsigned int n)
+unsigned int shr64(Uint64* p, unsigned int n)
 {
+	unsigned int shifted = 0;
+
 	while(n > 16)
 	{
+		shifted = p->i[0];
 		p->i[0] = p->i[1];
 		p->i[1] = p->i[2];
 		p->i[2] = p->i[3];
@@ -88,16 +136,21 @@ void shr64(Uint64* p, unsigned int n)
 		n -= 16;
 	}
 
+	shifted >>= n;
+	shifted |= p->i[0] << (16 - n);
+
 	p->i[0] >>= n;
-	p->i[0] |= p->i[1] << n;
+	p->i[0] |= p->i[1] << (16 - n);
 
 	p->i[1] >>= n;
-	p->i[1] |= p->i[2] << n;
+	p->i[1] |= p->i[2] << (16 - n);
 
 	p->i[2] >>= n;
-	p->i[2] |= p->i[3] << n;
+	p->i[2] |= p->i[3] << (16 - n);
 
 	p->i[3] >>= n;
+
+	return shifted;
 }
 
 void shl64(Uint64* p, unsigned int n)
@@ -113,13 +166,13 @@ void shl64(Uint64* p, unsigned int n)
 	}
 
 	p->i[3] <<= n;
-	p->i[3] |= p->i[2] >> n;
+	p->i[3] |= p->i[2] >> (16 - n);
 
 	p->i[2] <<= n;
-	p->i[2] |= p->i[1] >> n;
+	p->i[2] |= p->i[1] >> (16 - n);
 
 	p->i[1] <<= n;
-	p->i[1] |= p->i[0] >> n;
+	p->i[1] |= p->i[0] >> (16 - n);
 
 	p->i[0] <<= n;
 }
