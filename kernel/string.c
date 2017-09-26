@@ -26,6 +26,31 @@ int strcmp(char* str1,char* str2)
 	return 0;
 }
 
+int memcmp(char* str1,char* str2, int count)
+{
+	int dist = 0;
+
+	while(count--)
+	{
+		if(*str1 != *str2)
+		{
+			dist = *str1 - *str2;
+
+			break;
+		}
+
+		str1++;
+		str2++;
+	}
+
+	if(dist > 0)
+		return 1;
+	else if(dist < 0)
+		return -1;
+
+	return 0;
+}
+
 char* strcpy(char* dest,char* src)
 {
 	while(*src!=0)

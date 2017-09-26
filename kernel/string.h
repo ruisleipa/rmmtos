@@ -3,6 +3,7 @@
 
 char* strcpy(char* dest,char* src);
 int strcmp(char* str1,char* str2);
+int memcmp(char* str1,char* str2, int count);
 
 char* farmemcpy(char* dest,char* src,int count,unsigned int destseg,unsigned int srcseg);
 char* memcpy(char* dest, char* src, int count);
