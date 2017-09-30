@@ -137,14 +137,20 @@ static int floppy_specify()
 		&& floppy_write_cmd((HEAD_LOAD_TIME << 1));
 }
 
+static int selected = 0;
+
 static void floppy_select_drive()
 {
 	floppydebug("floppy_select_drive\t");
 
 	outb(IO_DOR, 0x1C);
 
-	clock_set_wakeup(current_task, 500);
-	task_sleep(current_task);
+	if(selected == 0) {
+		clock_set_wakeup(current_task, 500);
+		task_sleep(current_task);
+	}
+
+	selected = 1;
 }
 
 static void floppy_recalibrate()
