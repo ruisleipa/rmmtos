@@ -13,8 +13,8 @@ void init_serial() {
 	// no parity, 8 data bits, one stop bit, dlab active
 	outb(PORT + PORT_LINE_CONTROL, 0x3);
 
-	// divisor 0x0003 -> 38400 bps
-	outb(PORT + 0, 0x03);
+	// divisor 0x0001 -> 115200 bps
+	outb(PORT + 0, 0x01);
 	outb(PORT + 1, 0x00);
 
 	// disable fifo
