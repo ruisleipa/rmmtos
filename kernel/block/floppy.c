@@ -16,6 +16,7 @@ static struct BlockFileOps floppy_ops =
 #define DRIVES 2
 #define IO_BASE 0x3f0
 #define IO_DOR IO_BASE + 2
+#define IO_DSR IO_BASE + 4
 #define IO_MSR IO_BASE + 4
 #define IO_FIFO IO_BASE + 5
 #define IO_CCR IO_BASE + 7
@@ -41,12 +42,7 @@ static void floppy_reset()
 	int i;
 	floppydebug("floppy_reset\t");
 
-	outb(IO_DOR, 0x00);
-
-	clock_set_wakeup(current_task, 1);
-	task_sleep(current_task);
-
-	outb(IO_DOR, 0x0c);
+	outb(IO_DSR, 0x80);
 }
 
 static void floppy_set_data_rate()
