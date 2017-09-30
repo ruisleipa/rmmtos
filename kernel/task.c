@@ -271,7 +271,7 @@ unsigned int fork()
 	memsetw(task->stack, 0, KERNEL_STACK_WORDS);
 
 	/* create a kernel stack for returning to userspace */
-	task->stack[KERNEL_STACK_WORDS - 1] = &kernel_exit_spc; /* return address */
+	task->stack[KERNEL_STACK_WORDS - 1] = &kernel_exit; /* return address */
 	task->stack[KERNEL_STACK_WORDS - 2] = 0x0000; /* bp */
 	task->stack[KERNEL_STACK_WORDS - 3] = 0x0000; /* ax */
 	task->stack[KERNEL_STACK_WORDS - 4] = 0x0000; /* si */
