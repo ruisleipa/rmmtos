@@ -1,4 +1,5 @@
 #include "uint64.h"
+#include "panic.h"
 
 void init64_32(Uint64* p, unsigned long h, unsigned long l)
 {
@@ -58,18 +59,6 @@ void inc64(Uint64* a)
 	}
 }
 
-void dec64(Uint64* a)
-{
-	unsigned int carry = 1;
-	unsigned int i;
-
-	for(i = 0; i < 4; ++i)
-	{
-		a->i[i] -= carry;
-		carry = (a->i[i] > carry);
-	}
-}
-
 void set64(Uint64* a, Uint64* b)
 {
 	a->i[0] = b->i[0];
@@ -107,6 +96,25 @@ void add64_16(Uint64* a, unsigned int b)
 	}
 }
 
+void dec64(Uint64* a)
+{
+	unsigned int carry = 0;
+	unsigned int t = 0;
+	unsigned int i;
+
+	t = ~(1) + 1 - carry;
+	a->i[0] += t;
+	carry = (a->i[0] > t);
+
+	for(i = 1; i < 4; ++i)
+	{
+		t = ~(0) + 1 - carry;
+		a->i[i] += t;
+		carry = (a->i[i] > t);
+		t = 0;
+	}
+}
+
 void sub64(Uint64* a, Uint64* b)
 {
 	unsigned int carry = 0;
@@ -115,15 +123,18 @@ void sub64(Uint64* a, Uint64* b)
 
 	for(i = 0; i < 4; ++i)
 	{
-		t = ~(b->i[i]) + 1 + carry;
+		t = ~(b->i[i]) + 1 - carry;
 		a->i[i] += t;
-		carry = (a->i[i] < t);
+		carry = (a->i[i] > t);
 	}
 }
 
 unsigned int shr64(Uint64* p, unsigned int n)
 {
 	unsigned int shifted = 0;
+
+	if(n > 16)
+		panic("too large shr64, fix this");
 
 	while(n > 16)
 	{
@@ -136,8 +147,7 @@ unsigned int shr64(Uint64* p, unsigned int n)
 		n -= 16;
 	}
 
-	shifted >>= n;
-	shifted |= p->i[0] << (16 - n);
+	shifted = (p->i[0] << (16 - n)) >> (16 - n);
 
 	p->i[0] >>= n;
 	p->i[0] |= p->i[1] << (16 - n);
