@@ -201,22 +201,71 @@ unsigned int sys_unmount(struct Task* task)
 
 unsigned int sys_fork(struct Task* task)
 {
-	fork();
-	return 1;
+	return fork();
 }
 
 unsigned int sys_exec(struct Task* task)
 {
 	char* path = get_string(task, BX);
+	struct Node* node = 0;
+	struct Handle* handle = 0;
+	char* buffer = 0;
+	unsigned int addr = 0;
 
-	if(!path)
-		return -1;
+	if(path) {
+		debug_printf("exec %s\n", path);
 
-	printf("sys_exec: %s\n", path);
+		node = vfs_get_node_for_path(path);
+		free(path);
+	}
 
-	free(path);
+	if(node)
+	{
+		debug_printf("open %s\n", node->name);
 
-	return -1;
+		handle = file_open(node, HANDLE_READ);
+
+		buffer = malloc(512);
+	}
+
+	debug_printf("handle: %x buffer: %x\n", handle, buffer);
+
+	if(handle && buffer) {
+		unsigned int result;
+		unsigned int i;
+
+		do {
+			result = file_read(handle, buffer, 512);
+
+			debug_printf("exec read %x bytes\n", result);
+
+			/*for(i = 0; i < 512; i++)
+			{
+				if(i % 32 == 0 && i != 0) {
+					printf("\n");
+				}
+
+				printf("%a ", buffer[i]);
+			}*/
+
+			task_set_memory(task, addr, buffer, (result & FILE_IO_RESULT_SIZE_MASK));
+
+			addr += (result & FILE_IO_RESULT_SIZE_MASK);
+
+		} while((result & FILE_IO_RESULT_SIZE_MASK) > 0 && (result & FILE_IO_RESULT_STATUS_MASK) == 0);
+
+		exec();
+
+		// TODO On error: kill the process!!!
+	}
+
+	if(buffer)
+		free(buffer);
+
+	if(handle)
+		file_close(handle);
+
+	return 0;
 }
 
 unsigned int sys_sleep(struct Task* task)

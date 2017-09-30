@@ -11,6 +11,7 @@
 #define CX 8
 #define BX 10
 #define AX 12
+#define CS 18
 
 #include "fs/node.h"
 
