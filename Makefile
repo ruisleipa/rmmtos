@@ -1,8 +1,12 @@
-all: kernel boot image
+all: kernel boot image versions
 
 floppyclean.img:
 	dd if=/dev/zero of=floppyclean.img bs=512 count=2880
 	mkfs.msdos floppyclean.img
+
+.PHONY: versions
+versions:
+	md5sum boot/boot.bin kernel/kernel.bin kernel/symbols.bin init/init.bin
 
 .PHONY: image
 image: kernel boot floppyclean.img
