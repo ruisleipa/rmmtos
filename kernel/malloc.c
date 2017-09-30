@@ -44,7 +44,7 @@ void* malloc(unsigned int size)
 	int i = 0;
 	int j = 0;
 
-	while(zones[i].size < size) {
+	while(zones[i].size < size && i < SIZE_COUNT) {
 		debug_printf("j%x\t", zones[i].count);
 		current_block += zones[i].count;
 
