@@ -7,12 +7,10 @@ struct BlockHeader
 	unsigned int free:1;
 };
 
-struct BlockHeader* first;
+struct BlockHeader* first=0;
 
 /* this is the address of the byte after the pool */
 struct BlockHeader* overblock = 0;
-
-extern void* _end;
 
 static void mergeFreeBlocks(struct BlockHeader* block)
 {
@@ -29,7 +27,7 @@ static void mergeFreeBlocks(struct BlockHeader* block)
 	last_free->prev=first_free;
 }
 
-static void init(void* start,void* end)
+void malloc_init(void* start,void* end)
 {
 	unsigned int size;
 
@@ -49,9 +47,6 @@ void* allocateMemory(unsigned int size)
 {
 	struct BlockHeader* curr;
 	unsigned int curr_size;
-
-	if(!first)
-		init((void*)&_end, (void*)0xfdff);
 
 	curr = first;
 

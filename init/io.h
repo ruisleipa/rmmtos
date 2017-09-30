@@ -24,7 +24,8 @@ struct FileHandle;
 struct FileHandle* openFile(char* path, unsigned int mode);
 void closeFile(struct FileHandle* handle);
 
-unsigned int readFile(struct FileHandle* handle, char* buffer, struct FilePosition* position, unsigned int count);
-unsigned int writeFile(struct FileHandle* handle, char* buffer, struct FilePosition* position, unsigned int count);
+unsigned int seekFile(struct FileHandle* handle, struct FilePosition* position);
+unsigned int readFile(struct FileHandle* handle, char* buffer, unsigned int count);
+unsigned int writeFile(struct FileHandle* handle, char* buffer, unsigned int count);
 
 #endif

@@ -22,6 +22,40 @@ unsigned int sys_open_file(char* path, unsigned int mode)
 #endasm
 }
 
+unsigned int sys_exec(char* path)
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	push bx
+
+	mov ax, #10
+	mov bx, 4[bp]
+
+	int $80
+
+	pop bx
+
+	pop bp
+#endasm
+}
+
+unsigned int sys_fork()
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	mov ax, #9
+
+	int $80
+
+	pop bp
+#endasm
+}
+
+
 void sys_close_file(unsigned int handle)
 {
 #asm
@@ -103,6 +137,28 @@ unsigned int sys_write_file(unsigned int handle, char* buffer, unsigned int size
 	int $80
 
 	pop dx
+	pop cx
+	pop bx
+
+	pop bp
+#endasm
+}
+
+unsigned int sys_seek(unsigned int handle, Uint64* position)
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	push bx
+	push cx
+
+	mov ax, #5
+	mov bx, 4[bp]
+	mov cx, 6[bp]
+
+	int $80
+
 	pop cx
 	pop bx
 

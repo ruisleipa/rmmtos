@@ -1,6 +1,7 @@
 #include "io.h"
 #include "memory.h"
 #include "sys.h"
+#include "uint64.h"
 
 struct FileHandle
 {
@@ -17,8 +18,10 @@ struct FileHandle* openFile(char* path, unsigned int mode)
 
 	handle = allocateMemory(sizeof(struct FileHandle));
 
-	if(!handle)
+	if(!handle) {
+		sys_exit(0x5000);
 		return 0;
+	}
 
 	handle->handle = h;
 
@@ -34,10 +37,15 @@ void closeFile(struct FileHandle* handle)
 
 unsigned int readFile(struct FileHandle* handle, char* buffer, unsigned int count)
 {
-	sys_read_file(handle->handle, buffer, count);
+	return sys_read_file(handle->handle, buffer, count);
+}
+
+unsigned int seekFile(struct FileHandle* handle, Uint64* position)
+{
+	return sys_seek(handle->handle, position);
 }
 
 unsigned int writeFile(struct FileHandle* handle, char* buffer, unsigned int count)
 {
-	sys_write_file(handle->handle, buffer, count);
+	return sys_write_file(handle->handle, buffer, count);
 }

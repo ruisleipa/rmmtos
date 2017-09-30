@@ -15,6 +15,8 @@ image: kernel boot floppyclean.img
 	-cp kernel/kernel.bin /mnt
 	-cp init/init.bin /mnt
 	-cp kernel/symbols.bin /mnt
+	-cp init/*.bin /mnt
+	-cp test.txt /mnt
 	sudo umount /mnt
 	dd if=boot/boot.bin of=floppy.img bs=512 conv=notrunc
 
