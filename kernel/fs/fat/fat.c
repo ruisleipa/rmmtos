@@ -81,9 +81,6 @@ struct Parameters* fat_read_parameters(struct Parameters* params, struct FileHan
 		memcpy(&params->hidden_sectors, &mbr[28], sizeof(params->hidden_sectors));
 		memcpy(&params->total_sectors, &mbr[32], sizeof(params->total_sectors));
 
-		printf("fat spc: %x bps: %x\n", params->sectors_per_cluster, params->bytes_per_sector);
-		printf("fat rootent: %x secs: %x\n", params->root_entries, (params->root_entries *32 + params->bytes_per_sector - 1) / params->bytes_per_sector);
-
 		free(mbr);
 	}
 }
@@ -181,57 +178,31 @@ unsigned int fat_read_file(struct FileHandle* handle, char* buffer, unsigned int
 	struct DirectoryEntry entry;
 	unsigned int current_cluster;
 	unsigned int cluster_offset;
+	unsigned int end_offset;
 	Uint64 whole_clusters_left;
 	Uint64 position;
 	unsigned int completed = 0;
 
 	set64(&whole_clusters_left, &handle->position);
+	debug_printf("whole_clusters_left1: %x%x%x%x\n", whole_clusters_left.i[3], whole_clusters_left.i[2], whole_clusters_left.i[1], whole_clusters_left.i[0]);
+
 	cluster_offset = shr64(&whole_clusters_left, file->root->cluster_pot);
+	debug_printf("whole_clusters_left2: %x%x%x%x\n", whole_clusters_left.i[3], whole_clusters_left.i[2], whole_clusters_left.i[1], whole_clusters_left.i[0]);
 
 	file_seek(file->root->handle, &file->entry_position);
 	file_read(file->root->handle, &entry, sizeof(entry));
 
+	// TODO: support 32 bit length
+	init64(&position, 0, 0, 0, ((unsigned int*) &entry.size)[0]);
+	end_offset = shr64(&position, file->root->cluster_pot);
+
+
 	current_cluster = entry.cluster_lo;
 
-	while(completed < count) {
+	while(completed < count && current_cluster < 0xFF7) {
 		unsigned int next_cluster;
 
-		printf("cluster_offset: %d current_cluster: %d", cluster_offset, current_cluster);
-
-		// TODO: handle bad clusters?
-		if(cmp64_16(&whole_clusters_left, 0) > 0)
-		{
-			// just skipping
-			dec64(&whole_clusters_left);
-		} else {
-			// cluster is at least partially to be read to buffer
-			unsigned int size = (1 << file->root->cluster_pot) - cluster_offset;
-
-			if(size > (count - completed)) {
-				size = (count - completed);
-			}
-
-			init64(&position, 0, 0, 0, current_cluster - 2);
-			shl64(&position, file->root->cluster_pot);
-			add64(&position, &file->root->root_end);
-			file_seek(file->root->handle, &position);
-
-			printf("reading %d bytes from cluster @ %x%x\n", size, position.i[1], position.i[0]);
-
-			size = file_read(file->root->handle, buffer, size);
-
-			printf("read %x bytes from cluster\n", size);
-
-			buffer += size & FILE_IO_RESULT_SIZE_MASK;
-			completed += size & FILE_IO_RESULT_SIZE_MASK;
-
-			printf("completed %x count %x \n", completed, count);
-
-			// After reading the first partial cluster the read will always begin at the start of a cluster
-			cluster_offset = 0;
-
-			// TODO: handle file end
-		}
+		debug_printf("cluster_offset: %d current_cluster: %d end_offset: %d", cluster_offset, current_cluster, end_offset);
 
 		init64(&position, 0, 0, 0, current_cluster + (current_cluster / 2));
 		add64(&position, &file->root->fat_begin);
@@ -245,12 +216,62 @@ unsigned int fat_read_file(struct FileHandle* handle, char* buffer, unsigned int
 			next_cluster &= 0x0FFF;
 		}
 
-		if (next_cluster >= 0xFF8) {
-			return completed;
+		// TODO: handle bad clusters?
+		if(cmp64_16(&whole_clusters_left, 0) != 0)
+		{
+			debug_printf("end_offset: %x, whole_clusters_left: %x%x%x%x, skipping\n", end_offset, whole_clusters_left.i[3], whole_clusters_left.i[2], whole_clusters_left.i[1], whole_clusters_left.i[0]);
+			// just skipping
+			dec64(&whole_clusters_left);
+		} else {
+			// cluster is at least partially to be read to buffer
+
+			unsigned int size = (1 << file->root->cluster_pot) - cluster_offset;
+			debug_printf("end_offset: %x, whole_clusters_left: %x, not skipping\n", end_offset, whole_clusters_left.i[0]);
+
+	/*		512
+
+			0+512 > 24
+
+			24 - 0 = 24
+*/			debug_printf("size: %x\n", size);
+
+			if (next_cluster >= 0xFF8) {
+				if((cluster_offset + size) > end_offset) {
+					size = end_offset - cluster_offset;
+				}
+			}
+			debug_printf("size: %x\n", size);
+
+			if(size > (count - completed)) {
+				size = (count - completed);
+			}
+
+			debug_printf("size: %x\n", size);
+
+
+			init64(&position, 0, 0, 0, current_cluster - 2);
+			shl64(&position, file->root->cluster_pot);
+			add64(&position, &file->root->root_end);
+			add64_16(&position, cluster_offset);
+			file_seek(file->root->handle, &position);
+
+			debug_printf("size: %x\n", size);
+
+			size = file_read(file->root->handle, buffer, size);
+
+			buffer += size & FILE_IO_RESULT_SIZE_MASK;
+			completed += size & FILE_IO_RESULT_SIZE_MASK;
+
+			// After reading the first partial cluster the read will always begin at the start of a cluster
+			cluster_offset = 0;
+
+			// TODO: handle file end
 		}
 
 		current_cluster = next_cluster;
 	}
+
+	add64_16(&handle->position, completed);
 
 	return completed;
 }
@@ -281,7 +302,7 @@ struct Node* fat_root_get_node_by_name(struct DirectoryHandle* handle, char* nam
 			break;
 		}
 
-		if(memcmp(entry.name, name) != 0) {
+		if(memcmp(entry.name, name, 8 + 3) != 0) {
 			continue;
 		}
 
@@ -320,7 +341,7 @@ struct Directory* create_fat_fs(struct File* data)
 	struct Parameters* params = malloc(sizeof(struct Parameters));
 	struct FatRootDirectory* root_directory = realloc(directory, sizeof(*root_directory));
 
-	printf("create_fat_fs: %x %x %x\n", root_directory, params, handle);
+	debug_printf("create_fat_fs: %x %x %x\n", root_directory, params, handle);
 
 	if(directory && params && handle)
 	{
