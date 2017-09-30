@@ -82,7 +82,7 @@ unsigned int blockfile_read(struct FileHandle* handle, char* buffer, unsigned in
 	add64(&end_block, &t);
 	shr64(&end_block, block_file->block_size_exponent);
 
-	while(cmp64(&block, &end_block) <= 0)
+	while(cmp64(&block, &end_block) <= 0 && done < size)
 	{
 		if(cmp64(&block, &begin_block) == 0)
 			part_begin = handle->position.i[0] & offset_mask;
