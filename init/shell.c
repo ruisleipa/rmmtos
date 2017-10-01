@@ -9,10 +9,25 @@ extern struct File* input;
 extern struct File* output;
 
 int runCommand(char* command) {
-	printf("Got command: \"%s\"\n", command);
+	int i = 0;
+
+	char* arg = "";
+
+	while(command[i] != ' ' && command[i] != 0) {
+		i++;
+	}
+
+	if(command[i] == ' ') {
+		command[i] = 0;
+		arg = &command[i+1];
+	}
+
+	printf("Got command: \"%s\" \"%s\"\n", command, arg);
 
 	if(strcmp("exit", command) == 0) {
 		return 0;
+	} else if(strcmp("pause", command) == 0) {
+		return 1;
 	} else {
 		unsigned int task_id;
 
@@ -22,7 +37,7 @@ int runCommand(char* command) {
 		task_id = sys_fork();
 
 		if(task_id == 0) {
-			sys_exec(command);
+			sys_exec(command, arg);
 			sys_exit(1);
 		} else {
 			sys_wait_for_task(task_id);
