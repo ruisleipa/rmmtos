@@ -18,8 +18,12 @@ unsigned int strlen(char* str);
 
 int atoi(char* str);
 
+char toupper(char c);
+char tolower(char c);
+
 #define isdigit(x) ((x)>='0' && (x)<='9')
-#define isalpha(x) ((x)>='A' && (x)<='z')
+#define isupper(x) ((x)>='A' && (x)<='Z')
+#define islower(x) ((x)>='a' && (x)<='z')
 #define isalnum(x) (isdigit(x) || isalpha(x))
 #define isspace(x) ((x)==0x20 || (x)==0x09 || ((x)>=0x0a && (x)<=0x0d) )
 

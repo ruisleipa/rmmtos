@@ -244,3 +244,20 @@ int atoi(char* str)
 	return value;
 }
 
+char toupper(char c)
+{
+	if(islower(c)) {
+		return c - 32;
+	}
+
+	return c;
+}
+
+char tolower(char c)
+{
+	if(isupper(c)) {
+		return c + 32;
+	}
+
+	return c;
+}
