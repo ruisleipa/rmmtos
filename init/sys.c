@@ -22,19 +22,22 @@ unsigned int sys_open_file(char* path, unsigned int mode)
 #endasm
 }
 
-unsigned int sys_exec(char* path)
+unsigned int sys_exec(char* path, char* arg)
 {
 #asm
 	push bp
 	mov  bp, sp
 
 	push bx
+	push cx
 
 	mov ax, #10
 	mov bx, 4[bp]
+	mov cx, 6[bp]
 
 	int $80
 
+	pop cx
 	pop bx
 
 	pop bp

@@ -220,6 +220,7 @@ unsigned int sys_fork(struct Task* task)
 unsigned int sys_exec(struct Task* task)
 {
 	char* path = get_string(task, BX);
+	char* param = get_string(task, CX);
 	struct Node* node = 0;
 	struct Handle* handle = 0;
 	char* buffer = 0;
@@ -243,7 +244,7 @@ unsigned int sys_exec(struct Task* task)
 
 	debug_printf("handle: %x buffer: %x\n", handle, buffer);
 
-	if(handle && buffer) {
+	if(handle && buffer && param) {
 		unsigned int result;
 		unsigned int i;
 
@@ -267,7 +268,7 @@ unsigned int sys_exec(struct Task* task)
 
 		} while((result & FILE_IO_RESULT_SIZE_MASK) > 0 && (result & FILE_IO_RESULT_STATUS_MASK) == 0);
 
-		exec();
+		exec(param);
 
 		// TODO On error: kill the process!!!
 	}

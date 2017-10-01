@@ -4,7 +4,7 @@
 #include "uint64.h"
 
 unsigned int sys_open(char* path);
-unsigned int sys_exec(char* path);
+unsigned int sys_exec(char* path, char* arg = "");
 void sys_close(unsigned int handle);
 void sys_exit(unsigned int code);
 

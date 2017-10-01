@@ -381,21 +381,37 @@ unsigned int fork()
 	return task->segment;
 }
 
-void exec()
+void exec(char* param)
 {
-	current_task->user_sp = 0xffea;
+	int i = strlen(param);
 
-	pokew(current_task->segment, 0xfffe, 0x0200); /* flags */
-	pokew(current_task->segment, 0xfffc, current_task->segment); /* cs */
-	pokew(current_task->segment, 0xfffa, 0x0000); /* ip */
-	pokew(current_task->segment, 0xfff8, 0xbeef); /* unneeded address */
-	pokew(current_task->segment, 0xfff6, 0x0000); /* ax */
-	pokew(current_task->segment, 0xfff4, 0x0000); /* bx */
-	pokew(current_task->segment, 0xfff2, 0x0000); /* cx */
-	pokew(current_task->segment, 0xfff0, 0x0000); /* dx */
-	pokew(current_task->segment, 0xffee, 0x0000); /* si */
-	pokew(current_task->segment, 0xffec, 0x0000); /* di */
-	pokew(current_task->segment, 0xffea, 0x0000); /* bp */
+	current_task->user_sp = 0xffff;
+
+	while(i >= 0) {
+		poke(current_task->segment, current_task->user_sp, param[i]);
+		current_task->user_sp--;
+
+		i--;
+	}
+
+	current_task->user_sp--;
+
+
+	current_task->user_sp -= 2;
+
+	pokew(current_task->segment, current_task->user_sp, 0x0200); /* flags */
+	pokew(current_task->segment, current_task->user_sp - 2, current_task->segment); /* cs */
+	pokew(current_task->segment, current_task->user_sp - 4, 0x0000); /* ip */
+	pokew(current_task->segment, current_task->user_sp - 6, 0xbeef); /* unneeded address */
+	pokew(current_task->segment, current_task->user_sp - 8, 0x0000); /* ax */
+	pokew(current_task->segment, current_task->user_sp - 10, 0x0000); /* bx */
+	pokew(current_task->segment, current_task->user_sp - 12, 0x0000); /* cx */
+	pokew(current_task->segment, current_task->user_sp - 14, 0x0000); /* dx */
+	pokew(current_task->segment, current_task->user_sp - 16, 0x0000); /* si */
+	pokew(current_task->segment, current_task->user_sp - 18, 0x0000); /* di */
+	pokew(current_task->segment, current_task->user_sp - 20, 0x0000); /* bp */
+
+	current_task->user_sp = current_task->user_sp - 20;
 
 	debug_printf("poked a new stack for %x\n", current_task->segment);
 
