@@ -71,7 +71,12 @@ void name_to_fat(char* name, char* fat_name) {
 		name++;
 	}
 
-	i = 8;
+	while(i < 8) {
+		fat_name[i] = ' ';
+		i++;
+	}
+
+	// skip dot
 	name++;
 
 	while(*name != '.' && i < 11) {
@@ -317,9 +322,11 @@ struct Node* fat_root_get_node_by_name(struct DirectoryHandle* handle, char* out
 	struct FatRootDirectory* directory = handle->super.node;
 	Uint64 position;
 	struct DirectoryEntry entry;
-	char name[8 + 3 + 2];
+	char name[8 + 3];
 
 	name_to_fat(outer_name, name);
+
+	debug_printf("trying to find file: %s %s\n", outer_name, name);
 
 	set64(&position, &directory->root_begin);
 
