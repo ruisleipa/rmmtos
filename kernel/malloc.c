@@ -22,7 +22,7 @@ struct size_block zones[SIZE_COUNT] = {
 	{4, 0, 1},
 	{8, 0, 1},
 	{18, 0, 3},
-	{36, 0, 1},
+	{38, 0, 1},
 	{512, 8, 0},
 	{KERNEL_STACK_WORDS * sizeof(unsigned int), 2, 0}
 };
