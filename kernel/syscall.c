@@ -7,7 +7,7 @@
 #include "fs/node.h"
 #include "uint64.h"
 
-#define NUM_SYSCALLS 12
+#define NUM_SYSCALLS 13
 
 typedef unsigned int (syscall_t)(Task*);
 
@@ -275,6 +275,12 @@ unsigned int sys_sleep(struct Task* task)
 	task_sleep(task);
 }
 
+unsigned int sys_create_path(struct Task* task)
+{
+	printf("sys_create_path unimplemented\n");
+	return -1;
+}
+
 syscall_t* syscall_table[NUM_SYSCALLS]=
 {
 	sys_exit,
@@ -288,7 +294,8 @@ syscall_t* syscall_table[NUM_SYSCALLS]=
 	sys_unmount,
 	sys_fork,
 	sys_exec,
-	sys_sleep
+	sys_sleep,
+	sys_create_path
 };
 
 void syscall_func(unsigned int num)
