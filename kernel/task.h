@@ -54,5 +54,7 @@ struct Handle* task_get_handle(struct Task* task, unsigned int id);
 void task_sleep(struct Task* task);
 void task_wakeup(struct Task* task);
 
+void exec(char* param = "");
+
 #endif
 
