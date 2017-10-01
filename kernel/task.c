@@ -397,6 +397,8 @@ void exec(char* param)
 	current_task->user_sp--;
 
 
+	pokew(current_task->segment, current_task->user_sp, 1); /* argc */
+
 	current_task->user_sp -= 2;
 
 	pokew(current_task->segment, current_task->user_sp, 0x0200); /* flags */
