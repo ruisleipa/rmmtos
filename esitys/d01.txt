@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+   RMMTOS
+
+   - Real Mode MultiTasking Operating System
+
+   - Toimii Intelin 8086:n (1979) k„skykannalla
+
+   - Muistia suoraan k„ytett„viss„ n. 1 megatavu
+
+        - osa oheislaitteiden k„yt”ss„, j„ljelle j„„ noin 640 kilotavua	
+
+   - yhteens„ noin 7 000 rivi„ C-koodia ja 500 assembly„
+
+   - 8086:ssa ei suojaustoimintoja
+
+        -> prosessit voivat halutessaan sotkea kaiken
+
+		
+
+

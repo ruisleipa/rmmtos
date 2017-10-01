@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+   Muistinhallinta
+
+   - k„ytt”j„rjestelm„„ toteutettaessa yleens„ tehd„„n oma allokaattori
+
+   - k„yt„nn”ss„ siis "kopio" C:n malloc- ja free-funktioista
+
+   - RMMTOS:issa koko allokoitava muistialue jaettu vaihtelevan kokoisiin
+   
+     lohkoihin
+
+	 
+	 
+	 
+	 
+	 
+
+		
+
+

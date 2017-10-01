@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+   Virtuaalinen tiedostoj„rjestelm„ (VFS)
+
+   - abstrahoi eri tyyppiset tiedostoj„rjstelm„t
+
+   - mahdollistaa tiedostoj„rjestelm„riippumattoman tiedostonk„sittelyn
+
+
+   
+   
+
+	 
+	 
+	 
+	 
+	 
+
+		
+
+

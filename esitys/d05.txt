@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+   Ty”kalut
+
+   - BCC (Bruce's C Compiler)
+   
+   - GNU Make
+   
+   - erilaisia ty”kaluja tiedostoj„rjestelm„kuvien k„sittelyyn
+   
+   - Netbeans
+   
+   - Bochs, PC-emulaattori
+   
+       - sis„lt„„ debuggerin
+	 
+	 
+	 
+
+		
+

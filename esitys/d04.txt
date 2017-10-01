@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+   Laitteisto
+
+   - laitteiston kello, esim. moniajoon ja ajanhallintaan
+   
+   - levykeasema
+   
+   - VGA-tekstitila, konsolia varten
+   
+   - sarjaporttiajuri debuggausta varten
+
+   - n„pp„imist”
+
+	 
+	 
+	 
+
+		
+
+
