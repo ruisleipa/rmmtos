@@ -204,10 +204,10 @@ void malloc_info()
 {
 	int i;
 
-	debug_printf("malloc zones:\n");
+	printf("malloc zones:\n");
 
 	for(i = 0; i < SIZE_COUNT; ++i) {
-		debug_printf("%d blocks of %d bytes = %d bytes in total\n", zones[i].count, zones[i].size, zones[i].size * zones[i].count);
+		printf("%d blocks of %d bytes = %d bytes in total\n", zones[i].count, zones[i].size, zones[i].size * zones[i].count);
 	}
 
 	malloc_stats();

@@ -186,7 +186,8 @@ unsigned int sys_seek(struct Task* task)
 
 unsigned int sys_remove(struct Task* task)
 {
-	printf("sys_remove unimplemented\n");
+	malloc_info();
+	debug_printf("sys_remove unimplemented\n");
 	return -1;
 }
 
