@@ -209,3 +209,22 @@ unsigned int sys_sleep(unsigned int milliseconds)
 	pop bp
 #endasm
 }
+
+unsigned int sys_wait_for_task(unsigned int task)
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	push bx
+
+	mov ax, #13
+	mov bx, 4[bp]
+
+	int $80
+
+	pop bx
+
+	pop bp
+#endasm
+}
