@@ -37,17 +37,19 @@ extern struct Task* current_task;
 
 #define floppydebug debug_printf
 
-static void floppy_reset()
+static int floppy_reset()
 {
 	int i;
-	floppydebug("floppy_reset\t");
+	floppydebug("reset\t");
 
 	outb(IO_DSR, 0x80);
+
+	return 1;
 }
 
-static void floppy_set_data_rate()
+static int floppy_set_data_rate()
 {
-	floppydebug("floppy_set_data_rate\t");
+	floppydebug("drate\t");
 	outb(IO_CCR, CCR_DATA_RATE);
 }
 
@@ -56,11 +58,11 @@ static int floppy_write_cmd(unsigned char byte)
 	int i = 0;
 	unsigned char msr;
 
-	floppydebug("floppy_write_cmd\t");
+	floppydebug("wrcmd\t");
 	while(((msr = inb(IO_MSR)) & 0xc0) != 0x80)
 	{
 		if(i++ > 30) {
-			printf("floppy_write_cmd msr was %a\n", msr);
+			floppydebug("floppy_write_cmd msr was %a\n", msr);
 
 			return 0;
 		}
@@ -75,11 +77,11 @@ static int floppy_read_result(unsigned char* byte)
 	int i = 0;
 	unsigned char msr;
 
-	floppydebug("floppy_read_result\t");
+	floppydebug("rdres\t");
 	while(((msr = inb(IO_MSR)) & 0xc0) != 0xc0)
 	{
 		if(i++ > 30) {
-			printf("floppy_read_result msr was %a\n", msr);
+			floppydebug("floppy_read_result msr was %a\n", msr);
 
 			return 0;
 		}
@@ -94,7 +96,7 @@ static int floppy_sense()
 	unsigned char status0;
 	unsigned char cylinder;
 
-	floppydebug("floppy_sense\t");
+	floppydebug("sense\t");
 	return floppy_write_cmd(CMD_SENSE)
 		&& floppy_read_result(&status0)
 		&& floppy_read_result(&cylinder);
@@ -115,7 +117,7 @@ static int floppy_configure()
 	b2 |= POLLING_DISABLE << 4;
 	b2 |= TRESHOLD;
 
-	floppydebug("floppy_configure\t");
+	floppydebug("conf\t");
 
 	return floppy_write_cmd(CMD_CONFIGURE)
 		&& floppy_write_cmd(0)
@@ -130,7 +132,7 @@ static int floppy_configure()
 
 static int floppy_specify()
 {
-	floppydebug("floppy_specify\t");
+	floppydebug("spec\t");
 
 	return floppy_write_cmd(CMD_SPECIFY)
 		&& floppy_write_cmd((STEP_RATE << 4) | (HEAD_UNLOAD_TIME & 0xf))
@@ -139,47 +141,51 @@ static int floppy_specify()
 
 static int selected = 0;
 
-static void floppy_select_drive()
+static int floppy_select_drive()
 {
-	floppydebug("floppy_select_drive\t");
+	floppydebug("sel\t");
 
 	outb(IO_DOR, 0x1C);
 
-	if(selected == 0) {
-		clock_set_wakeup(current_task, 500);
-		task_sleep(current_task);
-	}
+	clock_set_wakeup(current_task, 500);
+	task_sleep(current_task);
 
 	selected = 1;
+
+	return 1;
 }
 
-static void floppy_recalibrate()
+static int floppy_recalibrate()
 {
-	floppydebug("floppy_recalibrate\t");
+	int res = 1;
+
+	floppydebug("recal\t");
 
 	irq_set_wakeup(current_task, 6);
 
-	floppy_write_cmd(CMD_RECALIBRATE);
-	floppy_write_cmd(0);
+	res = floppy_write_cmd(CMD_RECALIBRATE)
+		&& floppy_write_cmd(0);
 
 	task_sleep(current_task);
 
-	floppy_sense();
+	return res && floppy_sense();
 }
 
-static void floppy_seek(unsigned char cylinder, unsigned char head)
+static int floppy_seek(unsigned char cylinder, unsigned char head)
 {
-	floppydebug("floppy_seek\t");
+	int res = 1;
+
+	floppydebug("seek\t");
 
 	irq_set_wakeup(current_task, 6);
 
-	floppy_write_cmd(CMD_SEEK);
-	floppy_write_cmd(0 | ((head & 0x1) << 2));
-	floppy_write_cmd(cylinder);
+	res = floppy_write_cmd(CMD_SEEK)
+		&& floppy_write_cmd(0 | ((head & 0x1) << 2))
+		&& floppy_write_cmd(cylinder);
 
 	task_sleep(current_task);
 
-	floppy_sense();
+	return res && floppy_sense();
 }
 
 #define WRITE 0x2
@@ -187,9 +193,9 @@ static void floppy_seek(unsigned char cylinder, unsigned char head)
 
 #define KERNEL_BASE 0x500
 
-static void floppy_set_dma(unsigned int buffer, unsigned int count, int dir)
+static int floppy_set_dma(unsigned int buffer, unsigned int count, int dir)
 {
-	floppydebug("floppy_set_dma\t");
+	floppydebug("set_dma\t");
 
 	buffer += KERNEL_BASE;
 
@@ -217,13 +223,16 @@ static void floppy_set_dma(unsigned int buffer, unsigned int count, int dir)
 
 	/* unmask channel*/
 	outb(0x0a, 0x2);
+
+	return 1;
 }
 
-static void floppy_transfer(int dir, unsigned char cyl, unsigned char head, unsigned char sec)
+static int floppy_transfer(int dir, unsigned char cyl, unsigned char head, unsigned char sec)
 {
 	unsigned char command;
 	unsigned char st0, st1, st2, rcy, rhe, rse, bps;
-	floppydebug("floppy_transfer\t");
+	int res;
+	floppydebug("xfer\t");
 
 	if(dir == WRITE)
 		command = CMD_WRITE;
@@ -232,32 +241,33 @@ static void floppy_transfer(int dir, unsigned char cyl, unsigned char head, unsi
 
 	irq_set_wakeup(current_task, 6);
 
-	floppy_write_cmd(command);
-	floppy_write_cmd((head & 0x1) << 2);
-	floppy_write_cmd(cyl);
-	floppy_write_cmd(head);
-	floppy_write_cmd(sec);
-	floppy_write_cmd(0x02);
-	floppy_write_cmd(1);
-	floppy_write_cmd(GAP_LENGTH);
-	floppy_write_cmd(0xff);
+	res = floppy_write_cmd(command)
+		&& floppy_write_cmd((head & 0x1) << 2)
+		&& floppy_write_cmd(cyl)
+		&& floppy_write_cmd(head)
+		&& floppy_write_cmd(sec)
+		&& floppy_write_cmd(0x02)
+		&& floppy_write_cmd(1)
+		&& floppy_write_cmd(GAP_LENGTH)
+		&& floppy_write_cmd(0xff);
 
 	task_sleep(current_task);
 
-	floppy_read_result(&st0);
-	floppy_read_result(&st1);
-	floppy_read_result(&st2);
-	floppy_read_result(&rcy);
-	floppy_read_result(&rhe);
-	floppy_read_result(&rse);
-	floppy_read_result(&bps);
+	return res
+		&& floppy_read_result(&st0)
+		&& floppy_read_result(&st1)
+		&& floppy_read_result(&st2)
+		&& floppy_read_result(&rcy)
+		&& floppy_read_result(&rhe)
+		&& floppy_read_result(&rse)
+		&& floppy_read_result(&bps);
 }
 
 #define SEC 18
 #define HD 2
 #define CYL 80
 
-void floppy_init2();
+int floppy_init2();
 
 #define SEC_POT 9
 #define SEC_SZ (1 << SEC_POT)
@@ -268,38 +278,46 @@ unsigned int floppy_read(struct File* node, char* buffer, Uint64* block)
 	unsigned int cylinder = lba / (SEC * HD);
 	unsigned int head = (lba / SEC) % HD;
 	unsigned int sector = (lba % SEC) + 1;
+	int res = 0;
 
-	floppy_init2();
+	while(res == 0) {
+		res = floppy_init2()
+			&& floppy_select_drive()
+			&& floppy_specify()
+			&& floppy_set_data_rate()
+			&& floppy_recalibrate()
+			&& floppy_seek(cylinder, head)
+			&& floppy_set_dma(buffer, SEC_SZ, READ)
+			&& floppy_transfer(READ, cylinder, head, sector);
 
-	floppy_select_drive();
-	floppy_specify();
-	floppy_set_data_rate();
-	floppy_recalibrate();
-	floppy_seek(cylinder, head);
+		if(!res) {
+			clock_set_wakeup(current_task, 1000);
+			task_sleep(current_task);
+		}
+	}
 
-	floppy_set_dma(buffer, SEC_SZ, READ);
-	floppy_transfer(READ, cylinder, head, sector);
-
-	return 1;
+	return res;
 }
 
-void floppy_init2()
+int floppy_init2()
 {
 	unsigned int i;
+	int res = 1;
 
 	irq_set_wakeup(current_task, 6);
 
-	floppy_reset();
+	res = floppy_reset();
 
 	task_sleep(current_task);
 
 	for(i = 0; i < 4; i++)
 	{
-		floppy_sense();
+		res = res && floppy_sense();
 	}
 
-	floppy_configure();
-	floppy_specify();
+	return res
+		&& floppy_configure()
+		&& floppy_specify();
 }
 
 void floppy_create_files()
