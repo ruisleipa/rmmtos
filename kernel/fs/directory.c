@@ -190,8 +190,6 @@ struct Node* directory_add_node(struct DirectoryHandle* handle, struct Node* nod
 	return node;
 }
 
-extern struct Node* vfs_root;
-
 void directory_redirect(struct Node* node, struct Directory* destination)
 {
 	struct Directory* directory = 0;

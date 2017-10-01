@@ -194,6 +194,20 @@ unsigned int sys_mount(char* destination_path, char* type, char* source_path)
 #endasm
 }
 
+void sys_unmount()
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	mov ax, #8
+
+	int $80
+
+	pop bp
+#endasm
+}
+
 unsigned int sys_sleep(unsigned int milliseconds)
 {
 #asm

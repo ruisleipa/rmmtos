@@ -206,9 +206,13 @@ unsigned int sys_mount(struct Task* task)
 	return 0;
 }
 
+extern struct Node* vfs_root;
+
 unsigned int sys_unmount(struct Task* task)
 {
-	printf("sys_unmount unimplemented\n");
+	tree(vfs_root, 0);
+
+	debug_printf("sys_unmount unimplemented\n");
 	return -1;
 }
 
