@@ -29,7 +29,7 @@ int main()
 
 	closeFile(screen);
 
-	sys_exec("/floppy/SHELL   BIN");
+	sys_exec("/floppy/shell.bin");
 
 	sys_exit(1);
 }

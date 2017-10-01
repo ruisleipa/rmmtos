@@ -49,9 +49,9 @@ struct FatFile
 {
 	struct File super;
 
-	char name[8+3+1];
 	struct FatRootDirectory* root;
 	Uint64 entry_position;
+	char name[8+1+3+1];
 };
 
 struct FileOps fat_file_ops = {
@@ -59,6 +59,50 @@ struct FileOps fat_file_ops = {
 	fat_read_file, /* read */
 	0, /* write */
 };
+
+void name_to_fat(char* name, char* fat_name) {
+	int i = 0;
+
+	//TODO: fix buffer overruns
+
+	while(*name != '.' && i < 8) {
+		fat_name[i] = toupper(*name);
+		i++;
+		name++;
+	}
+
+	i = 8;
+	name++;
+
+	while(*name != '.' && i < 11) {
+		fat_name[i] = toupper(*name);
+		i++;
+		name++;
+	}
+}
+
+void name_from_fat(char* fat_name, char* name) {
+	//TODO: fix buffer overruns
+	int i = 0;
+
+	while(fat_name[i] != ' ' && i < 8) {
+		*name = tolower(fat_name[i]);
+		i++;
+		name++;
+	}
+
+	i = 8;
+	*name = '.';
+	name++;
+
+	while(fat_name[i] != ' ' && i < 11) {
+		*name = tolower(fat_name[i]);
+		i++;
+		name++;
+	}
+
+	*name = 0;
+}
 
 struct Parameters* fat_read_parameters(struct Parameters* params, struct FileHandle* handle)
 {
@@ -149,8 +193,8 @@ struct Node* fat_root_get_next_node(struct DirectoryHandle* handle, struct FatFi
 			struct File* file = file_create_node(0, 0, &fat_file_ops);
 			struct FatFile* fat_file = realloc(file, sizeof(*fat_file));
 
-			memcpy(fat_file->name, &entry.name, 8 + 3);
-			fat_file->name[8 + 3] = 0;
+			name_from_fat(&entry.name, fat_file->name);
+
 			fat_file->root = directory;
 
 			// XXX: self referential pointer, invalid on realloc
@@ -163,14 +207,6 @@ struct Node* fat_root_get_next_node(struct DirectoryHandle* handle, struct FatFi
 	}
 
 	return 0;
-}
-
-void name_to_fat(char* name) {
-
-}
-
-void name_from_fat(char* name) {
-
 }
 
 unsigned int fat_read_file(struct FileHandle* handle, char* buffer, unsigned int count) {
@@ -276,11 +312,14 @@ unsigned int fat_read_file(struct FileHandle* handle, char* buffer, unsigned int
 	return completed;
 }
 
-struct Node* fat_root_get_node_by_name(struct DirectoryHandle* handle, char* name)
+struct Node* fat_root_get_node_by_name(struct DirectoryHandle* handle, char* outer_name)
 {
 	struct FatRootDirectory* directory = handle->super.node;
 	Uint64 position;
 	struct DirectoryEntry entry;
+	char name[8 + 3 + 2];
+
+	name_to_fat(outer_name, name);
 
 	set64(&position, &directory->root_begin);
 
@@ -310,8 +349,7 @@ struct Node* fat_root_get_node_by_name(struct DirectoryHandle* handle, char* nam
 			struct File* file = file_create_node(0, 0, &fat_file_ops);
 			struct FatFile* fat_file = realloc(file, sizeof(*fat_file));
 
-			memcpy(fat_file->name, &entry.name, 8 + 3);
-			fat_file->name[8 + 3] = 0;
+			name_from_fat(&entry.name, fat_file->name);
 
 			fat_file->root = directory;
 
