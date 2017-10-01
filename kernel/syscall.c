@@ -7,7 +7,7 @@
 #include "fs/node.h"
 #include "uint64.h"
 
-#define NUM_SYSCALLS 13
+#define NUM_SYSCALLS 14
 
 typedef unsigned int (syscall_t)(Task*);
 
@@ -294,6 +294,19 @@ unsigned int sys_create_path(struct Task* task)
 	return -1;
 }
 
+unsigned int sys_wait_for_task(struct Task* task)
+{
+	struct Task* task_to_wait_for = segment_to_task(task_get_register(task, BX));
+
+	if(task_to_wait_for) {
+		task_to_wait_for->task_waiting_for_exit = task;
+	}
+
+	task_sleep(task);
+
+	return 0;
+}
+
 syscall_t* syscall_table[NUM_SYSCALLS]=
 {
 	sys_exit,
@@ -308,7 +321,8 @@ syscall_t* syscall_table[NUM_SYSCALLS]=
 	sys_fork,
 	sys_exec,
 	sys_sleep,
-	sys_create_path
+	sys_create_path,
+	sys_wait_for_task
 };
 
 void syscall_func(unsigned int num)
