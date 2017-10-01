@@ -52,9 +52,9 @@ start:
 	mov ds, ax
 	mov es, ax
 video:
-        mov ax, #0x1112
-        mov bx, #0x0
-        int #0x10
+        #mov ax, #0x1112
+        #mov bx, #0x0
+        #int #0x10
         mov ax, #0x1003
         int #0x10
 	;:mov [drive], dx

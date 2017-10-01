@@ -6,7 +6,7 @@
 #include "mutex.h"
 
 #define SCREEN_WIDTH	80
-#define SCREEN_HEIGHT	50
+#define SCREEN_HEIGHT	25
 
 static unsigned int col=0;
 static unsigned int row=0;
