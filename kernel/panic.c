@@ -10,6 +10,10 @@ void do_panic(char* str,char* file,unsigned int line)
 	asm("cli");
 
 	printf("Panic on line %d of \"%s\": %s\n", line, file, str);
+
+	for(addr = 0; i < 80*50; ++i)
+		poke(0xb800,i*2+1, 0x1F);
+
 asm("hlt");
 	printf("Backtrace:\n");
 
