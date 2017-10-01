@@ -87,10 +87,10 @@ struct DirectoryHandle* directory_open(struct Node* node, unsigned int mode)
 
 void directory_close(struct DirectoryHandle* handle)
 {
-	if((handle->super.flags & ATTRIBUTE_MASK) & HANDLE_READ)
+	if(handle->super.flags & HANDLE_READ)
 		handle->super.node->readers--;
 
-	if((handle->super.flags & ATTRIBUTE_MASK) & HANDLE_WRITE)
+	if(handle->super.flags & HANDLE_WRITE)
 		handle->super.node->writers--;
 
 	node_release(handle->super.node);
