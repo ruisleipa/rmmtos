@@ -46,7 +46,7 @@ struct DirectoryHandle* directory_open(struct Node* node, unsigned int mode)
 	struct DirectoryHandle* handle = 0;
 	struct Directory* directory = 0;
 
-	if(mode & HANDLE_WRITE && node->readers > 0)
+	if(mode & HANDLE_WRITE && (node->readers > 0 || node->writers > 0))
 		return 0;
 
 	if(mode & HANDLE_READ && node->writers > 0)

@@ -30,11 +30,17 @@ struct FileHandle* file_open(struct Node* node, unsigned int mode)
 	struct FileHandle* handle = 0;
 	struct File* file = 0;
 
-	if((mode & HANDLE_WRITE) && node->readers > 0)
-		return 0;
+	debug_printf("opening file: %s, r%x w%x\n", node->name, node->readers, node->writers);
 
-	if((mode & HANDLE_READ) && node->writers > 0)
+	if((mode & HANDLE_WRITE) && (node->readers > 0 || node->writers > 0)) {
+		debug_printf("node->readers > 0\n");
 		return 0;
+	}
+
+	if((mode & HANDLE_READ) && node->writers > 0) {
+		debug_printf("node->readers > 0\n");
+		return 0;
+	}
 
 	if(node->flags & FILE)
 		file = (struct File*)node;
@@ -68,10 +74,10 @@ struct FileHandle* file_open(struct Node* node, unsigned int mode)
 
 void file_close(struct FileHandle* handle)
 {
-	if(handle->super.flags & ATTRIBUTE_MASK == HANDLE_READ)
+	if(handle->super.flags & HANDLE_READ)
 		handle->super.node->readers--;
 
-	if(handle->super.flags & ATTRIBUTE_MASK == HANDLE_WRITE)
+	if(handle->super.flags & HANDLE_WRITE)
 		handle->super.node->writers--;
 
 	node_release(handle->super.node);

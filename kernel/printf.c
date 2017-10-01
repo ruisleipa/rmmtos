@@ -14,11 +14,13 @@ void putch_set(putch_t* func)
 
 void debug_putch(char c)
 {
+	write_serial(c);
 	outb(0xE9, c);
 }
 
 void putch(char c)
 {
+	write_serial(c);
 	outb(0xE9, c);
 	putch_func(c);
 }
