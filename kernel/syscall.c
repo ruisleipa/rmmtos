@@ -167,8 +167,21 @@ unsigned int sys_write_file(struct Task* task)
 
 unsigned int sys_seek(struct Task* task)
 {
-	printf("sys_seek unimplemented\n");
-	return -1;
+	int id = task_get_register(task, BX);
+	unsigned int task_buffer = task_get_register(task, CX);
+	struct Handle* handle = 0;
+	Uint64 position;
+
+	handle = task_get_handle(task, id);
+
+	task_get_memory(task, task_buffer, &position, sizeof(position));
+
+	debug_printf("sys_seek(\"%s\", %x%x%x%x)\n",handle->node->name,position.i[3],position.i[2],position.i[1],position.i[0]);
+
+	if(handle)
+		file_seek(handle, &position);
+
+	return 0;
 }
 
 unsigned int sys_remove(struct Task* task)
