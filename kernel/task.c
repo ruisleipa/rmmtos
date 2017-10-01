@@ -13,14 +13,13 @@ not slept yet. This prevents the task subsequently entering a sleep state that
 has no event to wake the task up again.
 */
 #define WAKEN_BEFORE_SLEEP 2
+#define EXITED 3
 
 static struct Task* task_list=0;
 struct Task* current_task=0;
 
 extern void* init;
 extern void* init_end;
-
-static unsigned int task_seg = 0x1050;
 
 void switch_task(struct Task* old_task, struct Task* new_task)
 {
@@ -77,7 +76,7 @@ unsigned int allocate_segment() {
 }
 
 void free_segment(unsigned int segment) {
-	int i = (segment - 0x50) / 0x1000;
+	int i = (segment - 0x1050) / 0x1000;
 	segment_bitmap &= ~(0x80 >> i);
 }
 
@@ -85,30 +84,47 @@ void task_schedule()
 {
 	struct Task* new_task = current_task;
 	struct Task* old_task = current_task;
+	int seen_non_ended = 0;
+	int looped = 0;
 
 	do
 	{
 		new_task = new_task->next;
 
-		if(new_task == 0)
+		if(new_task == 0) {
 			new_task = task_list;
-	}
-	while(new_task->state != RUNNING);
+			looped++;
+		}
 
-	if(new_task != old_task)
-	{
-		debug_printf("switching tasks: %x -> %x\n", old_task, new_task);
-		debug_printf("%x %x %x %x %x -> ", old_task->user_sp, old_task->stack_top, old_task->segment, old_task->state, old_task->kernel_sp);
-		debug_printf("%x %x %x %x %x\n", new_task->user_sp, new_task->stack_top, new_task->segment, new_task->state, new_task->kernel_sp);
-		switch_task(old_task, new_task);
+		if(new_task->state != EXITED) {
+			seen_non_ended = 1;
+		}
+
+		if(new_task->state == RUNNING) {
+			if(new_task != old_task)
+			{
+				debug_printf("switching tasks: %x -> %x\n", old_task, new_task);
+				debug_printf("%x %x %x %x %x -> ", old_task->user_sp, old_task->stack_top, old_task->segment, old_task->state, old_task->kernel_sp);
+				debug_printf("%x %x %x %x %x\n", new_task->user_sp, new_task->stack_top, new_task->segment, new_task->state, new_task->kernel_sp);
+				switch_task(old_task, new_task);
+			}
+			return;
+		}
+
+		if(seen_non_ended && looped > 2) {
+			asm("hlt");
+		}
 	}
+	while(seen_non_ended || looped < 2);
+
+	panic("No tasks to run.");
 }
 
 struct Task* task_add(unsigned int segment)
 {
 	struct Task* task = malloc(sizeof(struct Task));
 	unsigned int* stack = malloc(sizeof(*stack) * KERNEL_STACK_WORDS);
-	
+
 	if(!task || !stack || !segment)
 		panic("Task alloc failed!");
 
@@ -142,6 +158,8 @@ struct Task* task_add(unsigned int segment)
 
 	task->handles = 0;
 	task->handle_count = 0;
+
+	task->task_waiting_for_exit = 0;
 
 	if(task_list == 0)
 	{
@@ -264,13 +282,56 @@ struct Handle* task_get_handle(struct Task* task, unsigned int id)
 	return 0;
 }
 
-void exit()
+void task_exit(struct Task* task)
 {
+	int i;
 
+	free_segment(task->segment);
+
+	for(i = 0; i < task->handle_count; ++i) {
+		struct TaskHandle* task_handle = &task->handles[i];
+
+		if(task_handle->handle) {
+			if(task_handle->handle->flags & DIRECTORY) {
+				directory_close(task_handle->handle);
+				task_handle->handle = 0;
+			} else if(task_handle->handle->flags & FILE) {
+				file_close(task_handle->handle);
+				task_handle->handle = 0;
+			}
+		}
+	}
+
+	free(task->handles);
+	task->handle_count = 0;
+
+	task->state = EXITED;
+
+	free(task->stack);
+	task->stack = 0;
+
+	if(task->task_waiting_for_exit) {
+		task_wakeup(task->task_waiting_for_exit);
+	}
+
+	task_schedule();
 }
 
 extern void* kernel_exit;
 extern void* kernel_exit_spc;
+
+struct Task* segment_to_task(unsigned int segment) {
+	struct Task* task = task_list;
+
+	while(task) {
+		if(task->segment == segment)
+			return task;
+
+		task = task->next;
+	}
+
+	return 0;
+}
 
 unsigned int fork()
 {
@@ -304,8 +365,12 @@ unsigned int fork()
 	task->kernel_sp = &task->stack[KERNEL_STACK_WORDS - 5];
 	task->stack_top = &task->stack[KERNEL_STACK_WORDS];
 
+	task->stack[KERNEL_STACK_GUARD_POS] = KERNEL_STACK_GUARD;
+
 	task->handle_count = 0;
 	task->handles = 0;
+
+	task->task_waiting_for_exit = 0;
 
 	pokew(task->segment, task->user_sp + 18, task->segment); //cs
 	pokew(task->segment, task->user_sp + 12, 0); // ax
@@ -313,7 +378,7 @@ unsigned int fork()
 	task->next = task_list;
 	task_list = task;
 
-	return 1;
+	return task->segment;
 }
 
 void exec()
@@ -359,4 +424,6 @@ printf("task wakeup: %x\n", task);
 		task->state = WAKEN_BEFORE_SLEEP;
 	else if(task->state == SLEEPING)
 		task->state = RUNNING;
+	else if(task->state == EXITED)
+		panic("wakeup on exited");
 }

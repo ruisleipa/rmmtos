@@ -1,7 +1,7 @@
 #ifndef KERNEL_TASK_H
 #define KERNEL_TASK_H
 
-#define KERNEL_STACK_WORDS 4096
+#define KERNEL_STACK_WORDS 512
 #define KERNEL_STACK_GUARD_POS 0
 #define KERNEL_STACK_GUARD 0xafee
 
@@ -26,16 +26,18 @@ struct Task
 	unsigned int user_sp;
 	unsigned int stack_top;
 	unsigned int segment;
-	unsigned int state;
+	unsigned char state;
 
 	unsigned int kernel_sp;
 
 	unsigned int* stack;
 
 	struct TaskHandle* handles;
-	unsigned int handle_count;
+	unsigned char handle_count;
 
-	struct Task* next;
+        struct Task* task_waiting_for_exit;
+
+        struct Task* next;
 };
 
 void task_init();
