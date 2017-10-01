@@ -58,6 +58,29 @@ void switch_task(struct Task* old_task, struct Task* new_task)
 
 static MUTEX(scheduler_lock);
 
+static unsigned char segment_bitmap = 0;
+
+unsigned int allocate_segment() {
+	int i;
+	unsigned int segment = 0x1050;
+
+	for (i = 0; i < 8; ++i) {
+		if((segment_bitmap & (0x80 >> i)) == 0) {
+			segment_bitmap |= (0x80 >> i);
+			return segment;
+		}
+
+		segment += 0x1000;
+	}
+
+	return 0;
+}
+
+void free_segment(unsigned int segment) {
+	int i = (segment - 0x50) / 0x1000;
+	segment_bitmap &= ~(0x80 >> i);
+}
+
 void task_schedule()
 {
 	struct Task* new_task = current_task;
@@ -84,12 +107,14 @@ void task_schedule()
 struct Task* task_add(unsigned int segment)
 {
 	struct Task* task = malloc(sizeof(struct Task));
+	unsigned int* stack = malloc(sizeof(*stack) * KERNEL_STACK_WORDS);
+	
+	if(!task || !stack || !segment)
+		panic("Task alloc failed!");
 
 	debug_printf("task->segment: %x\n", segment);
 
-	if(!task)
-		panic("Task alloc failed!");
-
+	task->stack = stack;
 	task->user_sp = 0xffea;
 	task->segment = segment;
 
@@ -112,9 +137,8 @@ struct Task* task_add(unsigned int segment)
 	task->state = RUNNING;
 	task->next = 0;
 
-	task->stack_guard = KERNEL_STACK_GUARD;
-
 	memsetw(task->stack, 0, KERNEL_STACK_WORDS);
+	task->stack[KERNEL_STACK_GUARD_POS] = KERNEL_STACK_GUARD;
 
 	task->handles = 0;
 	task->handle_count = 0;
@@ -135,27 +159,25 @@ struct Task* task_add(unsigned int segment)
 
 struct Task* task_new()
 {
+	unsigned int task_seg = allocate_segment();
 	struct Task* task = task_add(task_seg);
 
 	debug_printf("task_new: %x\n", task_seg);
-
-	task_seg += 0x1000;
 
 	return task;
 }
 
 void task_init()
 {
+	unsigned int task_seg = allocate_segment();
 	task_add(task_seg);
 
 	debug_printf("task_new: %x\n", task_seg);
-
-	task_seg += 0x1000;
 }
 
 void task_check_kernel_stack()
 {
-	if(current_task && current_task->stack_guard != KERNEL_STACK_GUARD)
+	if(current_task && current_task->stack[KERNEL_STACK_GUARD_POS] != KERNEL_STACK_GUARD)
 		panic("Kernel stack guard trashed!");
 }
 
@@ -253,14 +275,16 @@ extern void* kernel_exit_spc;
 unsigned int fork()
 {
 	struct Task* task = malloc(sizeof(struct Task));
+	unsigned int* stack = malloc(sizeof(*stack) * KERNEL_STACK_WORDS);
+	unsigned int segment = allocate_segment();
 
-	if(!task)
+	if(!task || !stack || !segment)
 		panic("Task alloc failed!");
 
 	memcpy(task, current_task, sizeof(struct Task));
 
-	task->segment = task_seg;
-	task_seg += 0x1000;
+	task->segment = segment;
+	task->stack = stack;
 	//task->state = SLEEPING;
 
 	debug_printf("fork: new %x\n", task->segment);
@@ -279,6 +303,9 @@ unsigned int fork()
 
 	task->kernel_sp = &task->stack[KERNEL_STACK_WORDS - 5];
 	task->stack_top = &task->stack[KERNEL_STACK_WORDS];
+
+	task->handle_count = 0;
+	task->handles = 0;
 
 	pokew(task->segment, task->user_sp + 18, task->segment); //cs
 	pokew(task->segment, task->user_sp + 12, 0); // ax

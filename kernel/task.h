@@ -2,6 +2,7 @@
 #define KERNEL_TASK_H
 
 #define KERNEL_STACK_WORDS 4096
+#define KERNEL_STACK_GUARD_POS 0
 #define KERNEL_STACK_GUARD 0xafee
 
 #define BP 0
@@ -29,8 +30,7 @@ struct Task
 
 	unsigned int kernel_sp;
 
-	unsigned int stack_guard;
-	unsigned int stack[KERNEL_STACK_WORDS];
+	unsigned int* stack;
 
 	struct TaskHandle* handles;
 	unsigned int handle_count;
