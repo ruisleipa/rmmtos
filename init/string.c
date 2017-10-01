@@ -52,9 +52,6 @@ char* farmemcpy(char* dest,char* src,int count,unsigned int destseg,unsigned int
 	push bx
 	push ax
 	push cx
-	pushf
-
-	cli
 
 	mov cx,12[bp]
 	mov ax,ds
@@ -72,7 +69,6 @@ char* farmemcpy(char* dest,char* src,int count,unsigned int destseg,unsigned int
 	mov ds, ax
 	mov es, bx
 
-	popf
 	pop cx
 	pop ax
 	pop bx
@@ -98,9 +94,6 @@ char* farmemset(char* dest,unsigned int val,int count,unsigned int seg)
 	push bx
 	push cx
 	push ax
-	pushf
-
-	cli
 
 	mov cx,10[bp]
 	mov bx,es
@@ -114,7 +107,6 @@ char* farmemset(char* dest,unsigned int val,int count,unsigned int seg)
 
 	mov es, bx
 
-	popf
 	pop ax
 	pop cx
 	pop bx
@@ -139,9 +131,6 @@ char* farmemsetw(char* dest,unsigned int val,int count,unsigned int seg)
 	push cx
 	push ax
 	push bx
-	pushf
-
-	cli
 
 	mov cx,10[bp]
 	mov bx,es
@@ -155,7 +144,6 @@ char* farmemsetw(char* dest,unsigned int val,int count,unsigned int seg)
 
 	mov es, bx
 
-	popf
 	pop bx
 	pop ax
 	pop cx
