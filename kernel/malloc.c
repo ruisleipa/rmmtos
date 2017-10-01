@@ -88,7 +88,6 @@ void* malloc(unsigned int size)
 		used_bytes += zones[i].size;
 
 		debug_printf("\nalloc %x %x\n", address, current_block);
-		malloc_info_terse();
 
 		return (void*)address;
 	}
@@ -137,7 +136,6 @@ void free(void* block)
 	used_bytes -= zones[zone].size;
 
 	debug_printf("freed %x %x\n", block, current_block);
-	malloc_info_terse();
 }
 
 

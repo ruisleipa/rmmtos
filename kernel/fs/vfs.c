@@ -48,22 +48,12 @@ struct VfsPathResolution* vfs_start_resolve(char* path)
 	resolution->current_node = vfs_root;
 	resolution->current_part = resolution->path;
 
-/*	printf("::");
-
-	for(i = 0; i < path_size - 1; ++i)
-	{
-		char c = resolution->path[i];
-		printf("%c", c == 0 ? '/' : c);
-	}
-
-	printf("\n");
-*/
 	return resolution;
 }
 
 int vfs_advance_resolution(struct VfsPathResolution* resolution)
 {
-	//printf("current_part '%s'\n", resolution->current_part);
+	debug_printf("current_part '%s'\n", resolution->current_part);
 
 	while(*resolution->current_part != 0) {
 		resolution->current_part++;
@@ -73,7 +63,7 @@ int vfs_advance_resolution(struct VfsPathResolution* resolution)
 		return RESOLUTION_END;
 
 	resolution->current_part++;
-	//printf("seeked_part '%s'\n", resolution->current_part);
+	debug_printf("seeked_part '%s'\n", resolution->current_part);
 
 	return vfs_retry_resolution(resolution);
 }

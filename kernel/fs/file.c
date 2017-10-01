@@ -10,7 +10,7 @@ struct File* file_create_node(char* name, unsigned int flags, struct FileOps* op
 	struct File* file = malloc(sizeof(struct File));
 	struct Node* node = file;
 
-	/*printf("file_create_node: \n", "", flags, ops);*/
+	debug_printf("file_create_node: \n", "", flags, ops);
 	if(file)
 	{
 		node_init(file, name, FILE | (flags & ATTRIBUTE_MASK));
@@ -18,8 +18,8 @@ struct File* file_create_node(char* name, unsigned int flags, struct FileOps* op
 		file->ops = ops;
 	}
 
-	/*printf("file_create_node: %s %x %x\n", node->name, node->flags, file->ops);
-	*/
+	debug_printf("file_create_node: %s %x %x\n", node->name, node->flags, file->ops);
+
 	node_acquire(node);
 
 	return file;

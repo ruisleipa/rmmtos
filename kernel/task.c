@@ -74,9 +74,9 @@ void task_schedule()
 
 	if(new_task != old_task)
 	{
-		printf("switching tasks: %x -> %x\n", old_task, new_task);
-		printf("%x %x %x %x %x -> ", old_task->user_sp, old_task->stack_top, old_task->segment, old_task->state, old_task->kernel_sp);
-		printf("%x %x %x %x %x\n", new_task->user_sp, new_task->stack_top, new_task->segment, new_task->state, new_task->kernel_sp);
+		debug_printf("switching tasks: %x -> %x\n", old_task, new_task);
+		debug_printf("%x %x %x %x %x -> ", old_task->user_sp, old_task->stack_top, old_task->segment, old_task->state, old_task->kernel_sp);
+		debug_printf("%x %x %x %x %x\n", new_task->user_sp, new_task->stack_top, new_task->segment, new_task->state, new_task->kernel_sp);
 		switch_task(old_task, new_task);
 	}
 }

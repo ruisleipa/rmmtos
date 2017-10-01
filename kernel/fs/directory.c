@@ -11,7 +11,7 @@ static char* NOT_WRITE = "write op on non-write handle";
 
 void directory_add_to_children(struct Directory* directory, struct Node* node)
 {
-	printf("adtc: %s %x %s %x \n", node->name, node->next, node->next->name, node->flags);
+	debug_printf("adtc: %s %x %s %x \n", node->name, node->next, node->next->name, node->flags);
 
 	if(node->next) {
 		panic("adding node to two dirs");
@@ -52,7 +52,7 @@ struct DirectoryHandle* directory_open(struct Node* node, unsigned int mode)
 	if(mode & HANDLE_READ && node->writers > 0)
 		return 0;
 
-	printf("mode: %x\n", mode);
+	debug_printf("node: %s\n", node->name);
 
 	if(node->flags & DIRECTORY)
 		directory = (struct Directory*)node;
@@ -136,7 +136,7 @@ struct Node* directory_find_node(struct DirectoryHandle* handle, char* name)
 	struct Directory* directory = handle->super.node;
 	struct Node* node;
 
-	printf("handle->super.flags: %x\n", handle->super.flags);
+	debug_printf("handle->super.flags: %x\n", handle->super.flags);
 
 	if(!((handle->super.flags & ATTRIBUTE_MASK) & HANDLE_READ))
 		panic(NOT_READ);
@@ -196,21 +196,14 @@ void directory_redirect(struct Node* node, struct Directory* destination)
 {
 	struct Directory* directory = 0;
 
-	printf("node: %s\n", node->name);
-	printf("dest: %s\n", destination->super.name);
-
 	if(node->flags & DIRECTORY)
 		directory = (struct Directory*)node;
 
 	if(!directory)
 		panic(non_dir);
 
-	printf("redirecting %s to %s\n", directory->super.name, destination->super.name);
+	debug_printf("redirecting %s to %s\n", directory->super.name, destination->super.name);
 
 	directory->redirect = destination;
-
-	tree(vfs_root, 0);
-	malloc_stats();
-	malloc_info_terse();
 }
 
