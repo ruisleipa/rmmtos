@@ -169,6 +169,20 @@ unsigned int sys_seek(unsigned int handle, Uint64* position)
 #endasm
 }
 
+void sys_remove()
+{
+#asm
+	push bp
+	mov  bp, sp
+
+	mov ax, #6
+
+	int $80
+
+	pop bp
+#endasm
+}
+
 unsigned int sys_mount(char* destination_path, char* type, char* source_path)
 {
 #asm ,type,source_path
