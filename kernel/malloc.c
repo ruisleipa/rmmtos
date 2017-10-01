@@ -27,7 +27,7 @@ struct size_block zones[SIZE_COUNT] = {
 	{sizeof(struct Task), 2, 0}
 };
 
-#define BITMAP_SIZE 100
+#define BITMAP_SIZE 1000
 
 //TODO: check if really zero allocated
 unsigned char bitmap[BITMAP_SIZE] = {0};
